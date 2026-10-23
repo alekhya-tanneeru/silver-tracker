@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SilverVault - Silver Purchase & Average Rate Tracker</title>
+    <title>SilverVault - Silver Portfolio & Average Rate Tracker</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
@@ -37,22 +37,52 @@
             background-image: radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.05) 0%, transparent 40%),
                               radial-gradient(circle at 85% 85%, rgba(203, 213, 225, 0.04) 0%, transparent 40%);
         }
+
+        /* Top Navigation Bar */
         .navbar {
-            background: rgba(10, 14, 23, 0.85);
+            background: rgba(10, 14, 23, 0.9);
             backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border-subtle);
-            padding: 0.85rem 0;
+            padding: 0.75rem 0;
             position: sticky; top: 0; z-index: 50;
         }
         .nav-container {
             max-width: 1350px; margin: 0 auto; padding: 0 1.5rem;
             display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
         }
-        .brand h1 { font-size: 1.35rem; font-weight: 800; color: #fff; }
+        .brand { display: flex; align-items: center; gap: 0.75rem; }
+        .brand-icon {
+            width: 40px; height: 40px; background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 1px solid var(--border-silver); border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+        }
+        .brand h1 { font-size: 1.3rem; font-weight: 800; color: #fff; line-height: 1.1; }
         .brand h1 span { background: var(--silver-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .tagline { font-size: 0.75rem; color: var(--silver-400); }
-        .nav-actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-        
+        .tagline { font-size: 0.72rem; color: var(--silver-400); }
+        .nav-actions { display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap; }
+
+        /* Tabs Navigation */
+        .tabs-nav-bar {
+            background: rgba(15, 23, 42, 0.6);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0.5rem 0;
+        }
+        .tabs-container {
+            max-width: 1350px; margin: 0 auto; padding: 0 1.5rem;
+            display: flex; gap: 0.5rem; overflow-x: auto;
+        }
+        .tab-btn {
+            background: transparent; border: 1px solid transparent; color: var(--silver-400);
+            padding: 0.6rem 1.25rem; border-radius: var(--radius-md); font-size: 0.88rem;
+            font-weight: 600; cursor: pointer; display: inline-flex; align-items: center;
+            gap: 0.5rem; transition: all 0.2s; white-space: nowrap;
+        }
+        .tab-btn:hover { color: #fff; background: rgba(30, 41, 59, 0.5); }
+        .tab-btn.active {
+            color: #fff; background: rgba(30, 41, 59, 0.9);
+            border-color: var(--border-silver); box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+
         .sync-badge {
             display: flex; align-items: center; gap: 0.5rem; background: rgba(30, 41, 59, 0.6);
             border: 1px solid var(--border-subtle); padding: 0.35rem 0.75rem; border-radius: var(--radius-md);
@@ -64,64 +94,102 @@
         .status-dot.inactive { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
 
         .btn {
-            display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.55rem 1rem;
+            display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.55rem 0.95rem;
             border-radius: var(--radius-md); font-weight: 600; font-size: 0.82rem; cursor: pointer;
             text-decoration: none; border: 1px solid transparent; transition: all 0.2s;
         }
         .btn-secondary { background: rgba(30, 41, 59, 0.8); color: var(--silver-200); border-color: var(--border-silver); }
         .btn-secondary:hover { background: rgba(51, 65, 85, 0.9); color: #fff; border-color: #fff; }
         .btn-primary { background: linear-gradient(135deg, #f8fafc, #cbd5e1); color: #0f172a; width: 100%; padding: 0.85rem; font-weight: 700; }
+        
         .main-container { max-width: 1350px; margin: 2rem auto; padding: 0 1.5rem; }
+
+        /* Tab Content Panes */
+        .tab-pane { display: none; animation: fadeIn 0.2s ease-in-out; }
+        .tab-pane.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Metrics Grid */
         .metrics-grid {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
             gap: 1.25rem; margin-bottom: 2rem;
         }
         .metric-card {
             background: var(--bg-card); border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg); padding: 1.35rem; position: relative; overflow: hidden;
+            border-radius: var(--radius-lg); padding: 1.5rem; position: relative; overflow: hidden;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
         }
         .metric-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
         .highlight-1kg::before { background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc); }
         .highlight-halfkg::before { background: linear-gradient(90deg, #34d399, #38bdf8, #818cf8); }
         .metric-label { font-size: 0.72rem; font-weight: 700; color: var(--silver-400); letter-spacing: 0.08em; }
-        .metric-value { font-family: 'Space Grotesk', sans-serif; font-size: 2.15rem; font-weight: 700; margin: 0.4rem 0; color: #fff; }
+        .metric-value { font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; font-weight: 700; margin: 0.4rem 0; color: #fff; }
         .hero-metric .metric-value { background: var(--silver-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .content-layout { display: grid; grid-template-columns: 460px 1fr; gap: 1.5rem; }
-        @media (max-width: 1050px) { .content-layout { grid-template-columns: 1fr; } }
-        .card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow: hidden; }
-        .card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-subtle); background: rgba(19, 28, 46, 0.4); }
+        .metric-footer { font-size: 0.8rem; color: var(--silver-400); }
+
+        /* Insight Cards Grid */
+        .insights-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem; margin-top: 1.5rem;
+        }
+        .insight-card {
+            background: rgba(19, 28, 46, 0.5); border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg); padding: 1.25rem;
+        }
+        .insight-card h3 { font-size: 0.85rem; color: var(--silver-400); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .insight-val { font-family: 'Space Grotesk', monospace; font-size: 1.35rem; font-weight: 700; color: #fff; }
+
+        /* Card Styles */
+        .card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); }
+        .card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-subtle); background: rgba(19, 28, 46, 0.4); display: flex; justify-content: space-between; align-items: center; }
         .card-header h2 { font-size: 1.15rem; color: #fff; }
-        .purchase-form { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
+
+        /* Form Controls */
+        .purchase-form { padding: 1.75rem; display: flex; flex-direction: column; gap: 1.25rem; max-width: 650px; margin: 0 auto; }
         .form-group { display: flex; flex-direction: column; gap: 0.45rem; }
         .form-label { font-size: 0.85rem; font-weight: 600; color: var(--silver-200); }
         .preset-chips { display: flex; gap: 0.4rem; flex-wrap: wrap; }
         .chip {
             background: rgba(30, 41, 59, 0.5); border: 1px solid var(--border-subtle); color: var(--silver-300);
-            padding: 0.35rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; cursor: pointer;
+            padding: 0.4rem 0.85rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600; cursor: pointer;
         }
         .chip.active { background: rgba(203, 213, 225, 0.2); border-color: #fff; color: #fff; }
         .form-control {
             width: 100%; background: var(--bg-surface); border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-md); padding: 0.7rem 0.9rem; color: #fff; font-size: 0.95rem;
+            border-radius: var(--radius-md); padding: 0.75rem 0.95rem; color: #fff; font-size: 0.95rem;
         }
+        .form-control:focus { outline: none; border-color: var(--border-silver); box-shadow: 0 0 0 3px rgba(203, 213, 225, 0.15); }
         .input-with-select { display: grid; grid-template-columns: 1fr 140px; gap: 0.5rem; }
         .unit-select { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--silver-200); padding: 0.7rem; }
         .segmented-control { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--bg-surface); padding: 0.25rem; border-radius: var(--radius-md); gap: 0.25rem; }
-        .segment { background: transparent; border: none; color: var(--silver-400); padding: 0.45rem; font-size: 0.75rem; font-weight: 600; border-radius: 6px; cursor: pointer; }
+        .segment { background: transparent; border: none; color: var(--silver-400); padding: 0.5rem; font-size: 0.78rem; font-weight: 600; border-radius: 6px; cursor: pointer; }
         .segment.active { background: rgba(203, 213, 225, 0.15); color: #fff; }
         .currency-input-wrapper { position: relative; }
-        .currency-prefix { position: absolute; left: 1rem; top: 0.65rem; color: var(--silver-400); font-weight: 600; }
-        .currency-input { padding-left: 2.2rem; font-family: 'Space Grotesk', monospace; font-size: 1.1rem; }
-        .calc-preview-card { background: rgba(15, 23, 42, 0.7); border: 1px dashed var(--border-silver); border-radius: var(--radius-md); padding: 0.9rem; }
+        .currency-prefix { position: absolute; left: 1rem; top: 0.7rem; color: var(--silver-400); font-weight: 600; }
+        .currency-input { padding-left: 2.2rem; font-family: 'Space Grotesk', monospace; font-size: 1.15rem; }
+
+        /* Calculation Preview */
+        .calc-preview-card { background: rgba(15, 23, 42, 0.7); border: 1px dashed var(--border-silver); border-radius: var(--radius-md); padding: 1rem; }
         .preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.8rem; margin-top: 0.5rem; }
-        .preview-item { background: rgba(30, 41, 59, 0.4); padding: 0.4rem 0.6rem; border-radius: 6px; display: flex; justify-content: space-between; }
-        .preview-item.highlight-total { grid-column: span 2; background: rgba(203, 213, 225, 0.08); }
-        .table-responsive { overflow-x: auto; max-height: 580px; }
-        .data-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
-        .data-table th, .data-table td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-subtle); }
+        .preview-item { background: rgba(30, 41, 59, 0.4); padding: 0.5rem 0.75rem; border-radius: 6px; display: flex; justify-content: space-between; }
+        .preview-item.highlight-total { grid-column: span 2; background: rgba(203, 213, 225, 0.08); border: 1px solid rgba(203, 213, 225, 0.15); }
+
+        /* Table */
+        .table-responsive { overflow-x: auto; max-height: 600px; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .data-table th, .data-table td { padding: 0.95rem 1.25rem; border-bottom: 1px solid var(--border-subtle); }
         .data-table th { background: rgba(15, 23, 42, 0.8); color: var(--silver-400); text-align: left; }
         .rate-cell { font-family: 'Space Grotesk', monospace; font-weight: 600; }
         .rate-highlight { color: #38bdf8; font-weight: 700; }
+
+        /* Calculator Tab */
+        .calc-tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        @media (max-width: 900px) { .calc-tool-grid { grid-template-columns: 1fr; } }
+        .sim-card { background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border-silver); border-radius: var(--radius-md); padding: 1.25rem; margin-top: 1rem; }
+        .sim-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px dashed var(--border-subtle); font-size: 0.88rem; }
+        .sim-row:last-child { border-bottom: none; }
+        .sim-val-new { color: #38bdf8; font-weight: 700; font-family: 'Space Grotesk', monospace; font-size: 1.05rem; }
+
         .toast-container { position: fixed; bottom: 2rem; right: 2rem; z-index: 100; }
         .toast { background: rgba(17, 24, 39, 0.95); border: 1px solid var(--border-silver); padding: 0.85rem 1.25rem; border-radius: var(--radius-md); color: #fff; font-size: 0.85rem; }
 
@@ -183,8 +251,11 @@
     <header class="navbar">
         <div class="nav-container">
             <div class="brand">
-                <h1>Silver<span>Vault</span></h1>
-                <p class="tagline">Protected Silver Portfolio &amp; Average Rate Analytics</p>
+                <div class="brand-icon">🪙</div>
+                <div>
+                    <h1>Silver<span>Vault</span></h1>
+                    <p class="tagline">Portfolio &amp; Average Rate Analytics</p>
+                </div>
             </div>
             <div class="nav-actions">
                 <button class="btn btn-secondary" onclick="lockVault()" title="Lock dashboard immediately">
@@ -192,7 +263,7 @@
                 </button>
                 <div class="sync-badge" onclick="openSettingsModal()" title="Click to configure automatic GitHub sync or change PIN">
                     <span class="status-dot inactive" id="syncDot"></span>
-                    <span id="syncText">GitHub Sync: Connect</span>
+                    <span id="syncText">Sync: Connect</span>
                 </div>
                 <button class="btn btn-secondary" onclick="exportToExcel()">Download Excel (.xlsx)</button>
                 <button class="btn btn-secondary" onclick="exportToCSV()">Download CSV</button>
@@ -200,42 +271,84 @@
         </div>
     </header>
 
-    <!-- Main Dashboard -->
+    <!-- Tab Navigation Bar -->
+    <nav class="tabs-nav-bar">
+        <div class="tabs-container">
+            <button class="tab-btn active" onclick="switchTab('dashboardTab')">📊 Dashboard</button>
+            <button class="tab-btn" onclick="switchTab('recordTab')">➕ Record Silver Purchase</button>
+            <button class="tab-btn" onclick="switchTab('historyTab')">📜 Purchase History</button>
+            <button class="tab-btn" onclick="switchTab('calcTab')">🧮 Average Calculator</button>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
     <main class="main-container" id="dashboardContent">
-        <!-- Hero Metrics Dashboard -->
-        <section class="metrics-grid">
-            <div class="metric-card hero-metric highlight-1kg">
-                <span class="metric-label">AVERAGE RATE / 1 KG</span>
-                <div class="metric-value" id="avgRateKgDisplay">₹0.00</div>
-                <span style="font-size: 0.8rem; color: var(--silver-400);">Weighted average per 1,000 grams</span>
+
+        <!-- ==========================================
+             TAB 1: DASHBOARD
+             ========================================== -->
+        <section class="tab-pane active" id="dashboardTab">
+            <!-- Hero Metrics Grid -->
+            <div class="metrics-grid">
+                <div class="metric-card hero-metric highlight-1kg">
+                    <span class="metric-label">AVERAGE RATE / 1 KG</span>
+                    <div class="metric-value" id="avgRateKgDisplay">₹0.00</div>
+                    <div class="metric-footer">Weighted average across all purchases</div>
+                </div>
+                <div class="metric-card hero-metric highlight-halfkg">
+                    <span class="metric-label">AVERAGE RATE / 1/2 KG</span>
+                    <div class="metric-value" id="avgRateHalfKgDisplay">₹0.00</div>
+                    <div class="metric-footer">Cost per 500 grams (1/2 Kg)</div>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-label">TOTAL SILVER OWNED</span>
+                    <div class="metric-value" id="totalWeightKgDisplay">0.000 <small style="font-size: 1rem; color: var(--silver-400);">Kg</small></div>
+                    <div class="metric-footer" id="totalWeightGramsDisplay">0 Grams</div>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-label">TOTAL AMOUNT INVESTED</span>
+                    <div class="metric-value" id="totalInvestedDisplay">₹0.00</div>
+                    <div class="metric-footer" id="purchaseCountDisplay">0 Purchases Recorded</div>
+                </div>
             </div>
-            <div class="metric-card hero-metric highlight-halfkg">
-                <span class="metric-label">AVERAGE RATE / 1/2 KG</span>
-                <div class="metric-value" id="avgRateHalfKgDisplay">₹0.00</div>
-                <span style="font-size: 0.8rem; color: var(--silver-400);">Weighted average per 500 grams</span>
-            </div>
-            <div class="metric-card">
-                <span class="metric-label">TOTAL SILVER OWNED</span>
-                <div class="metric-value" id="totalWeightKgDisplay">0.000 <small style="font-size: 1rem; color: var(--silver-400);">Kg</small></div>
-                <span style="font-size: 0.8rem; color: var(--silver-400);" id="totalWeightGramsDisplay">0 Grams</span>
-            </div>
-            <div class="metric-card">
-                <span class="metric-label">TOTAL AMOUNT INVESTED</span>
-                <div class="metric-value" id="totalInvestedDisplay">₹0.00</div>
-                <span style="font-size: 0.8rem; color: var(--silver-400);" id="purchaseCountDisplay">0 Purchases</span>
+
+            <!-- Portfolio Insights -->
+            <div class="card" style="padding: 1.5rem; margin-top: 1.5rem;">
+                <h2 style="font-size: 1.15rem; margin-bottom: 0.5rem;">📈 Portfolio Overview</h2>
+                <p style="font-size: 0.85rem; color: var(--silver-400);">Summary breakdown of your silver acquisitions recorded in <code>silver_purchases.csv</code>.</p>
+                
+                <div class="insights-grid">
+                    <div class="insight-card">
+                        <h3>Lowest Purchase Rate / 1 Kg</h3>
+                        <div class="insight-val" id="lowestRateDisplay" style="color: #34d399;">₹0.00</div>
+                    </div>
+                    <div class="insight-card">
+                        <h3>Highest Purchase Rate / 1 Kg</h3>
+                        <div class="insight-val" id="highestRateDisplay" style="color: #f87171;">₹0.00</div>
+                    </div>
+                    <div class="insight-card">
+                        <h3>Latest Purchase Date</h3>
+                        <div class="insight-val" id="latestDateDisplay">-</div>
+                    </div>
+                </div>
             </div>
         </section>
 
-        <div class="content-layout">
-            <!-- Left: Add Purchase Form -->
-            <section class="card">
-                <div class="card-header"><h2>Record Silver Purchase</h2></div>
+        <!-- ==========================================
+             TAB 2: RECORD SILVER PURCHASE
+             ========================================== -->
+        <section class="tab-pane" id="recordTab">
+            <div class="card" style="max-width: 700px; margin: 0 auto;">
+                <div class="card-header">
+                    <h2>Record New Silver Purchase</h2>
+                    <span style="font-size: 0.8rem; color: var(--silver-400);">Automatically syncs to GitHub</span>
+                </div>
                 <form id="purchaseForm" class="purchase-form">
                     <div class="form-group">
                         <label class="form-label">Silver Weight</label>
                         <div class="preset-chips">
                             <button type="button" class="chip active" data-w="1" data-u="KG">1 Kg</button>
-                            <button type="button" class="chip" data-w="0.5" data-u="KG">1/2 Kg</button>
+                            <button type="button" class="chip" data-w="0.5" data-u="KG">1/2 Kg (500g)</button>
                             <button type="button" class="chip" data-w="250" data-u="GRAMS">250g</button>
                             <button type="button" class="chip" data-w="100" data-u="GRAMS">100g</button>
                         </div>
@@ -277,18 +390,22 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Notes (Optional)</label>
-                        <input type="text" id="notesInput" placeholder="e.g. 999 Fine Silver Bar" class="form-control">
+                        <input type="text" id="notesInput" placeholder="e.g. 999 Fine Silver Bar, Tanishq" class="form-control">
                     </div>
 
                     <button type="submit" class="btn btn-primary" id="saveBtn">Save Purchase</button>
                 </form>
-            </section>
+            </div>
+        </section>
 
-            <!-- Right: Purchases Table -->
-            <section class="card">
-                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <!-- ==========================================
+             TAB 3: PURCHASE HISTORY
+             ========================================== -->
+        <section class="tab-pane" id="historyTab">
+            <div class="card">
+                <div class="card-header">
                     <h2>Purchase History</h2>
-                    <input type="text" id="searchInput" placeholder="Search notes..." class="form-control" style="width: 180px; padding: 0.35rem 0.6rem; font-size: 0.8rem;">
+                    <input type="text" id="searchInput" placeholder="Search notes or dates..." class="form-control" style="width: 220px; padding: 0.45rem 0.75rem; font-size: 0.82rem;">
                 </div>
                 <div class="table-responsive">
                     <table class="data-table">
@@ -306,8 +423,74 @@
                         <tbody id="tableBody"></tbody>
                     </table>
                 </div>
-            </section>
-        </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 4: AVERAGE CALCULATOR (SIMULATION)
+             ========================================== -->
+        <section class="tab-pane" id="calcTab">
+            <div class="calc-tool-grid">
+                <!-- What-if Portfolio Impact Calculator -->
+                <div class="card" style="padding: 1.5rem;">
+                    <h2 style="font-size: 1.15rem; margin-bottom: 0.4rem;">🔮 "What-If" Portfolio Impact</h2>
+                    <p style="font-size: 0.85rem; color: var(--silver-400); margin-bottom: 1.25rem;">
+                        Simulate buying silver today to see how it changes your overall average rate!
+                    </p>
+
+                    <div class="form-group">
+                        <label class="form-label">Prospective Weight (Kg)</label>
+                        <input type="number" id="simWeight" value="1" step="any" min="0.001" class="form-control">
+                    </div>
+                    <div class="form-group" style="margin-top: 0.75rem;">
+                        <label class="form-label">Prospective Price for 1 Kg (₹)</label>
+                        <input type="number" id="simRate1Kg" placeholder="e.g. 80000" class="form-control">
+                    </div>
+
+                    <div class="sim-card">
+                        <div class="sim-row">
+                            <span>Current Avg Rate / 1 Kg:</span>
+                            <span id="simCurrentAvg">₹0.00</span>
+                        </div>
+                        <div class="sim-row">
+                            <span>New Simulated Avg / 1 Kg:</span>
+                            <span class="sim-val-new" id="simNewAvg1Kg">₹0.00</span>
+                        </div>
+                        <div class="sim-row">
+                            <span>New Simulated Avg / 1/2 Kg:</span>
+                            <span class="sim-val-new" id="simNewAvgHalfKg">₹0.00</span>
+                        </div>
+                        <div class="sim-row">
+                            <span>Average Rate Difference:</span>
+                            <span id="simDiffDisplay" style="font-weight: 700;">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instant Unit Conversion Tool -->
+                <div class="card" style="padding: 1.5rem;">
+                    <h2 style="font-size: 1.15rem; margin-bottom: 0.4rem;">⚖️ Instant Unit Rate Converter</h2>
+                    <p style="font-size: 0.85rem; color: var(--silver-400); margin-bottom: 1.25rem;">
+                        Convert any silver quote instantly across all weight units.
+                    </p>
+
+                    <div class="form-group">
+                        <label class="form-label">Quote Rate for 1 Kg (₹)</label>
+                        <input type="number" id="unitRate1Kg" placeholder="e.g. 75000" class="form-control">
+                    </div>
+
+                    <div class="sim-card" style="margin-top: 1.25rem;">
+                        <div class="sim-row"><span>Price for 1 Kg (1,000g):</span><strong id="uRate1Kg">₹0.00</strong></div>
+                        <div class="sim-row"><span>Price for 1/2 Kg (500g):</span><strong id="uRateHalf">₹0.00</strong></div>
+                        <div class="sim-row"><span>Price for 250g (1/4 Kg):</span><strong id="uRate250">₹0.00</strong></div>
+                        <div class="sim-row"><span>Price for 100g:</span><strong id="uRate100">₹0.00</strong></div>
+                        <div class="sim-row"><span>Price for 10g:</span><strong id="uRate10">₹0.00</strong></div>
+                        <div class="sim-row"><span>Price for 1 Gram:</span><strong id="uRate1">₹0.00</strong></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <!-- Professional Login Screen Overlay -->
@@ -383,6 +566,7 @@
             document.getElementById('purchaseDateInput').value = new Date().toISOString().split('T')[0];
             checkSecurityLock();
             setupEvents();
+            setupCalcToolEvents();
             setupAutoLockTimer();
         });
 
@@ -475,6 +659,24 @@
             document.onkeypress = reset;
         }
 
+        // 1. Tab Switching
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+            const targetPane = document.getElementById(tabId);
+            if (targetPane) targetPane.classList.add('active');
+
+            const buttons = document.querySelectorAll('.tab-btn');
+            if (tabId === 'dashboardTab') buttons[0].classList.add('active');
+            else if (tabId === 'recordTab') buttons[1].classList.add('active');
+            else if (tabId === 'historyTab') buttons[2].classList.add('active');
+            else if (tabId === 'calcTab') {
+                buttons[3].classList.add('active');
+                updateSimulation();
+            }
+        };
+
         function getAuthHeader(token) {
             if (!token) return '';
             const t = token.trim();
@@ -482,9 +684,7 @@
             return 'token ' + t;
         }
 
-        // ==========================================
-        // 📊 DATA & GITHUB SYNC
-        // ==========================================
+        // 2. Load CSV data (from GitHub API if token set, else from file / cache)
         async function loadCSVData() {
             const token = localStorage.getItem('gh_token');
             const owner = localStorage.getItem('gh_user');
@@ -550,6 +750,7 @@
             if (parsed.length > 0) purchasesData = parsed;
         }
 
+        // 3. Commit updated CSV directly to GitHub repository
         async function commitCSVToGitHub(actionDesc) {
             const token = localStorage.getItem('gh_token');
             const owner = localStorage.getItem('gh_user');
@@ -557,7 +758,7 @@
             const branch = localStorage.getItem('gh_branch') || 'main';
 
             if (!token || !owner || !repo) {
-                toast('Saved in browser! Connect GitHub Sync at top right to auto-save to repository.');
+                toast('Saved in browser! Connect GitHub in Settings to auto-commit.');
                 return;
             }
 
@@ -612,9 +813,13 @@
             }
         }
 
+        // 4. Render Dashboard Metrics, Insights & Table
         function renderDashboard() {
             let totalWeight = 0;
             let totalInvested = 0;
+            let lowestRate = Infinity;
+            let highestRate = 0;
+            let latestDate = '-';
 
             const q = (document.getElementById('searchInput').value || '').toLowerCase();
             const tbody = document.getElementById('tableBody');
@@ -623,6 +828,9 @@
             purchasesData.forEach((p, idx) => {
                 totalWeight += p.weight;
                 totalInvested += p.total;
+                if (p.rate1Kg < lowestRate) lowestRate = p.rate1Kg;
+                if (p.rate1Kg > highestRate) highestRate = p.rate1Kg;
+                if (idx === 0) latestDate = p.date;
 
                 if (!q || (p.notes||'').toLowerCase().includes(q) || (p.date||'').includes(q)) {
                     const tr = document.createElement('tr');
@@ -648,8 +856,16 @@
             document.getElementById('totalWeightGramsDisplay').textContent = `${(totalWeight * 1000).toLocaleString()} Grams`;
             document.getElementById('totalInvestedDisplay').textContent = '₹' + totalInvested.toLocaleString('en-IN', {minimumFractionDigits: 2});
             document.getElementById('purchaseCountDisplay').textContent = `${purchasesData.length} Purchases`;
+
+            // Insights
+            document.getElementById('lowestRateDisplay').textContent = lowestRate === Infinity ? '₹0.00' : '₹' + lowestRate.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('highestRateDisplay').textContent = '₹' + highestRate.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('latestDateDisplay').textContent = latestDate;
+
+            updateSimulation();
         }
 
+        // 5. Form Events
         function setupEvents() {
             document.querySelectorAll('.preset-chips .chip').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -704,6 +920,7 @@
                 calcPreview();
 
                 await commitCSVToGitHub(`Add purchase: ${wKg}Kg on ${d}`);
+                switchTab('dashboardTab');
             });
 
             document.getElementById('searchInput').addEventListener('input', renderDashboard);
@@ -728,6 +945,61 @@
             document.getElementById('prevTotalCost').textContent = '₹' + total.toLocaleString('en-IN', {minimumFractionDigits: 2});
         }
 
+        // 6. Average Calculator Tool (Simulation Tab)
+        function setupCalcToolEvents() {
+            document.getElementById('simWeight').addEventListener('input', updateSimulation);
+            document.getElementById('simRate1Kg').addEventListener('input', updateSimulation);
+            document.getElementById('unitRate1Kg').addEventListener('input', updateUnitConverter);
+        }
+
+        function updateSimulation() {
+            let totalWeight = 0;
+            let totalInvested = 0;
+            purchasesData.forEach(p => { totalWeight += p.weight; totalInvested += p.total; });
+
+            const currentAvg = totalWeight > 0 ? (totalInvested / totalWeight) : 0;
+            document.getElementById('simCurrentAvg').textContent = '₹' + currentAvg.toLocaleString('en-IN', {minimumFractionDigits: 2});
+
+            const simW = parseFloat(document.getElementById('simWeight').value) || 0;
+            const simR = parseFloat(document.getElementById('simRate1Kg').value) || 0;
+
+            if (simW > 0 && simR > 0) {
+                const simCost = simW * simR;
+                const newTotalWeight = totalWeight + simW;
+                const newTotalInvested = totalInvested + simCost;
+                const newAvg1Kg = newTotalInvested / newTotalWeight;
+                const newAvgHalfKg = newAvg1Kg * 0.5;
+
+                document.getElementById('simNewAvg1Kg').textContent = '₹' + newAvg1Kg.toLocaleString('en-IN', {minimumFractionDigits: 2});
+                document.getElementById('simNewAvgHalfKg').textContent = '₹' + newAvgHalfKg.toLocaleString('en-IN', {minimumFractionDigits: 2});
+
+                const diff = newAvg1Kg - currentAvg;
+                const diffEl = document.getElementById('simDiffDisplay');
+                if (diff < 0) {
+                    diffEl.textContent = `⬇️ Saves ₹${Math.abs(diff).toFixed(2)}/Kg (Averages down)`;
+                    diffEl.style.color = '#34d399';
+                } else {
+                    diffEl.textContent = `⬆️ Increases by ₹${diff.toFixed(2)}/Kg`;
+                    diffEl.style.color = '#f87171';
+                }
+            } else {
+                document.getElementById('simNewAvg1Kg').textContent = '₹' + currentAvg.toLocaleString('en-IN', {minimumFractionDigits: 2});
+                document.getElementById('simNewAvgHalfKg').textContent = '₹' + (currentAvg * 0.5).toLocaleString('en-IN', {minimumFractionDigits: 2});
+                document.getElementById('simDiffDisplay').textContent = 'Enter rate to simulate';
+                document.getElementById('simDiffDisplay').style.color = 'var(--silver-400)';
+            }
+        }
+
+        function updateUnitConverter() {
+            const r1Kg = parseFloat(document.getElementById('unitRate1Kg').value) || 0;
+            document.getElementById('uRate1Kg').textContent = '₹' + r1Kg.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('uRateHalf').textContent = '₹' + (r1Kg * 0.5).toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('uRate250').textContent = '₹' + (r1Kg * 0.25).toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('uRate100').textContent = '₹' + (r1Kg * 0.10).toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('uRate10').textContent = '₹' + (r1Kg * 0.01).toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('uRate1').textContent = '₹' + (r1Kg / 1000).toLocaleString('en-IN', {minimumFractionDigits: 2});
+        }
+
         window.deleteEntry = async function(index) {
             if (confirm('Delete this purchase? It will also be deleted from GitHub.')) {
                 purchasesData.splice(index, 1);
@@ -737,12 +1009,13 @@
             }
         };
 
-        function openSettingsModal() {
+        // Modal Settings Handling
+        window.openSettingsModal = function() {
             document.getElementById('settingsModal').style.display = 'flex';
-        }
-        function closeSettingsModal() {
+        };
+        window.closeSettingsModal = function() {
             document.getElementById('settingsModal').style.display = 'none';
-        }
+        };
         function loadSavedSettings() {
             const token = localStorage.getItem('gh_token');
             const user = localStorage.getItem('gh_user');
@@ -793,10 +1066,10 @@
             const text = document.getElementById('syncText');
             if (isConnected) {
                 dot.className = 'status-dot active';
-                text.textContent = '🟢 GitHub Sync: Active';
+                text.textContent = 'Sync: Active';
             } else {
                 dot.className = 'status-dot inactive';
-                text.textContent = '🟡 GitHub Sync: Connect';
+                text.textContent = 'Sync: Connect';
             }
         }
 
