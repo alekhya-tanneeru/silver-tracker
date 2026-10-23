@@ -125,34 +125,74 @@
         .toast-container { position: fixed; bottom: 2rem; right: 2rem; z-index: 100; }
         .toast { background: rgba(17, 24, 39, 0.95); border: 1px solid var(--border-silver); padding: 0.85rem 1.25rem; border-radius: var(--radius-md); color: #fff; font-size: 0.85rem; }
 
-        /* Modal Settings */
+        /* Modal Overlays */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(6px);
+            background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px);
             display: none; align-items: center; justify-content: center; z-index: 200;
         }
         .modal {
             background: #111827; border: 1px solid var(--border-silver); border-radius: var(--radius-lg);
-            width: 90%; max-width: 500px; padding: 1.75rem; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+            width: 90%; max-width: 480px; padding: 2rem; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9);
         }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
         .modal-header h3 { font-size: 1.2rem; color: #fff; }
         .close-btn { background: none; border: none; color: var(--silver-400); font-size: 1.5rem; cursor: pointer; }
         .help-text { font-size: 0.78rem; color: var(--silver-400); margin-top: 0.35rem; line-height: 1.4; }
         .help-text a { color: var(--accent-blue); text-decoration: none; }
+
+        /* Login Screen Overlay */
+        .lock-screen-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(10, 14, 23, 0.97); backdrop-filter: blur(25px);
+            display: none; align-items: center; justify-content: center; z-index: 999;
+        }
+        .login-card {
+            background: #111827; border: 1px solid var(--border-silver); border-radius: var(--radius-lg);
+            width: 90%; max-width: 400px; padding: 2.75rem 2.25rem; text-align: center;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.9);
+        }
+        .login-logo {
+            width: 60px; height: 60px; margin: 0 auto 1.25rem auto;
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 1px solid var(--border-silver); border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem; box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+        }
+        .login-card h2 { font-size: 1.45rem; font-weight: 800; color: #fff; margin-bottom: 0.4rem; }
+        .login-card p { font-size: 0.85rem; color: var(--silver-400); margin-bottom: 1.75rem; line-height: 1.4; }
+        .login-input {
+            text-align: center; font-size: 1.3rem; letter-spacing: 0.35em; font-family: 'Space Grotesk', monospace;
+            padding: 0.85rem 1rem; width: 100%; margin-bottom: 1.25rem; border-radius: var(--radius-md);
+        }
+        .login-input:focus { border-color: #fff; box-shadow: 0 0 15px rgba(203, 213, 225, 0.25); }
+        .btn-login {
+            background: linear-gradient(135deg, #f8fafc, #cbd5e1); color: #0f172a;
+            width: 100%; padding: 0.85rem; font-size: 0.95rem; font-weight: 700;
+            border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s;
+        }
+        .btn-login:hover {
+            background: linear-gradient(135deg, #ffffff, #e2e8f0);
+            box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
+    <!-- Top Navigation Bar -->
     <header class="navbar">
         <div class="nav-container">
             <div class="brand">
                 <h1>Silver<span>Vault</span></h1>
-                <p class="tagline">Live Silver Portfolio &amp; Average Rate Analytics</p>
+                <p class="tagline">Protected Silver Portfolio &amp; Average Rate Analytics</p>
             </div>
             <div class="nav-actions">
-                <div class="sync-badge" onclick="openSettingsModal()" title="Click to configure automatic GitHub sync">
+                <button class="btn btn-secondary" onclick="lockVault()" title="Lock dashboard immediately">
+                    🔒 Logout
+                </button>
+                <div class="sync-badge" onclick="openSettingsModal()" title="Click to configure automatic GitHub sync or change PIN">
                     <span class="status-dot inactive" id="syncDot"></span>
-                    <span id="syncText">GitHub Sync: Not Connected</span>
+                    <span id="syncText">GitHub Sync: Connect</span>
                 </div>
                 <button class="btn btn-secondary" onclick="exportToExcel()">Download Excel (.xlsx)</button>
                 <button class="btn btn-secondary" onclick="exportToCSV()">Download CSV</button>
@@ -160,7 +200,8 @@
         </div>
     </header>
 
-    <main class="main-container">
+    <!-- Main Dashboard -->
+    <main class="main-container" id="dashboardContent">
         <!-- Hero Metrics Dashboard -->
         <section class="metrics-grid">
             <div class="metric-card hero-metric highlight-1kg">
@@ -269,14 +310,34 @@
         </div>
     </main>
 
-    <!-- GitHub Sync Settings Modal -->
+    <!-- Professional Login Screen Overlay -->
+    <div class="lock-screen-overlay" id="pinLockScreen">
+        <div class="login-card">
+            <div class="login-logo">🪙</div>
+            <h2 id="loginTitle">Login to SilverVault</h2>
+            <p id="loginSubtitle">Enter your passcode to access your portfolio.</p>
+            <form id="pinForm">
+                <input type="password" id="pinInputField" class="form-control login-input" maxlength="12" placeholder="Passcode" autofocus required>
+                <button type="submit" class="btn-login" id="loginBtn">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- GitHub Sync & Security Settings Modal -->
     <div class="modal-overlay" id="settingsModal">
         <div class="modal">
             <div class="modal-header">
-                <h3>⚙️ GitHub Sync Settings</h3>
+                <h3>⚙️ Settings &amp; Security</h3>
                 <button class="close-btn" onclick="closeSettingsModal()">&times;</button>
             </div>
             <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div class="form-group">
+                    <label class="form-label">Change Passcode / PIN</label>
+                    <input type="password" id="newMasterPin" placeholder="Enter new passcode" class="form-control">
+                </div>
+                <div style="border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
+                    <span style="font-size: 0.85rem; font-weight: 700; color: #fff;">GitHub Repository Connection</span>
+                </div>
                 <div class="form-group">
                     <label class="form-label">GitHub Username</label>
                     <input type="text" id="ghUsername" placeholder="e.g. your-github-username" class="form-control">
@@ -293,10 +354,10 @@
                     <label class="form-label">GitHub Personal Access Token</label>
                     <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx" class="form-control">
                     <p class="help-text">
-                        Create a free token on GitHub: <a href="https://github.com/settings/tokens" target="_blank">Settings ➔ Developer settings ➔ Tokens (classic)</a> with <strong>repo</strong> permissions. Your token is stored only inside your browser.
+                        Create a free token: <a href="https://github.com/settings/tokens/new" target="_blank">github.com/settings/tokens</a> with <strong>repo</strong> permissions. Stored securely inside your browser only. Works with both public and private repositories.
                     </p>
                 </div>
-                <button class="btn btn-primary" onclick="saveGitHubSettings()">Save &amp; Connect</button>
+                <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
             </div>
         </div>
     </div>
@@ -316,26 +377,126 @@
 
         let calcMode = '1KG';
         let currentFileSha = null;
+        let isVaultUnlocked = false;
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('purchaseDateInput').value = new Date().toISOString().split('T')[0];
-            loadSavedSettings();
-            loadCSVData();
+            checkSecurityLock();
             setupEvents();
+            setupAutoLockTimer();
         });
 
-        // 1. Load CSV data (from GitHub API if token set, else from file / cache)
+        // ==========================================
+        // 🔒 SECURITY LAYER: LOGIN & PIN
+        // ==========================================
+        async function sha256(str) {
+            const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function checkSecurityLock() {
+            const savedPinHash = localStorage.getItem('sv_pin_hash');
+            const lockScreen = document.getElementById('pinLockScreen');
+            const dashboard = document.getElementById('dashboardContent');
+
+            if (!savedPinHash) {
+                // First-time setup: prompt to create passcode
+                document.getElementById('loginTitle').textContent = 'Welcome to SilverVault';
+                document.getElementById('loginSubtitle').textContent = 'Create your passcode to secure your portfolio.';
+                document.getElementById('loginBtn').textContent = 'Login';
+                lockScreen.style.display = 'flex';
+                dashboard.style.filter = 'blur(15px)';
+            } else if (!isVaultUnlocked) {
+                // Standard login
+                document.getElementById('loginTitle').textContent = 'Login to SilverVault';
+                document.getElementById('loginSubtitle').textContent = 'Enter your passcode to access your portfolio.';
+                document.getElementById('loginBtn').textContent = 'Login';
+                lockScreen.style.display = 'flex';
+                dashboard.style.filter = 'blur(15px)';
+            }
+        }
+
+        document.getElementById('pinForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const entered = document.getElementById('pinInputField').value.trim();
+            const savedPinHash = localStorage.getItem('sv_pin_hash');
+
+            if (!savedPinHash) {
+                if (entered.length < 4) {
+                    toast('Passcode must be at least 4 characters');
+                    return;
+                }
+                const hash = await sha256(entered);
+                localStorage.setItem('sv_pin_hash', hash);
+                unlockVault();
+                toast('✅ Passcode created & logged in successfully!');
+            } else {
+                const hash = await sha256(entered);
+                if (hash === savedPinHash) {
+                    unlockVault();
+                    toast('🔓 Logged in successfully');
+                } else {
+                    toast('❌ Incorrect passcode');
+                    document.getElementById('pinInputField').value = '';
+                    document.getElementById('pinInputField').focus();
+                }
+            }
+        });
+
+        function unlockVault() {
+            isVaultUnlocked = true;
+            document.getElementById('pinLockScreen').style.display = 'none';
+            document.getElementById('dashboardContent').style.filter = 'none';
+            document.getElementById('pinInputField').value = '';
+            loadSavedSettings();
+            loadCSVData();
+        }
+
+        window.lockVault = function() {
+            isVaultUnlocked = false;
+            document.getElementById('dashboardContent').style.filter = 'blur(15px)';
+            document.getElementById('pinLockScreen').style.display = 'flex';
+            document.getElementById('pinInputField').value = '';
+            document.getElementById('pinInputField').focus();
+            toast('🔒 Logged out');
+        };
+
+        // Auto-lock after 15 minutes of inactivity
+        function setupAutoLockTimer() {
+            let timeout;
+            const reset = () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    if (isVaultUnlocked) lockVault();
+                }, 15 * 60 * 1000);
+            };
+            window.onload = reset;
+            document.onmousemove = reset;
+            document.onkeypress = reset;
+        }
+
+        function getAuthHeader(token) {
+            if (!token) return '';
+            const t = token.trim();
+            if (t.startsWith('token ') || t.startsWith('Bearer ')) return t;
+            return 'token ' + t;
+        }
+
+        // ==========================================
+        // 📊 DATA & GITHUB SYNC
+        // ==========================================
         async function loadCSVData() {
             const token = localStorage.getItem('gh_token');
             const owner = localStorage.getItem('gh_user');
             const repo = localStorage.getItem('gh_repo');
+            const branch = localStorage.getItem('gh_branch') || 'main';
 
             if (token && owner && repo) {
                 try {
-                    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/silver_purchases.csv?ref=${localStorage.getItem('gh_branch') || 'main'}`;
+                    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/silver_purchases.csv?ref=${branch}&_t=` + Date.now();
                     const res = await fetch(apiUrl, {
                         headers: {
-                            'Authorization': `Bearer ${token}`,
+                            'Authorization': getAuthHeader(token),
                             'Accept': 'application/vnd.github.v3+json'
                         }
                     });
@@ -348,7 +509,7 @@
                         return;
                     }
                 } catch(e) {
-                    console.log('GitHub API fetch failed, trying local file');
+                    console.log('GitHub API fetch failed, trying local backup');
                 }
             }
 
@@ -389,7 +550,6 @@
             if (parsed.length > 0) purchasesData = parsed;
         }
 
-        // 2. Commit updated CSV directly to GitHub repository
         async function commitCSVToGitHub(actionDesc) {
             const token = localStorage.getItem('gh_token');
             const owner = localStorage.getItem('gh_user');
@@ -397,7 +557,7 @@
             const branch = localStorage.getItem('gh_branch') || 'main';
 
             if (!token || !owner || !repo) {
-                toast('Saved locally! Connect GitHub in settings to auto-commit.');
+                toast('Saved in browser! Connect GitHub Sync at top right to auto-save to repository.');
                 return;
             }
 
@@ -406,17 +566,15 @@
             btn.textContent = 'Committing to GitHub...';
 
             try {
-                // Fetch latest SHA first to avoid commit conflict
-                const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/silver_purchases.csv?ref=${branch}`;
+                const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/silver_purchases.csv?ref=${branch}&_t=` + Date.now();
                 const getRes = await fetch(getUrl, {
-                    headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+                    headers: { 'Authorization': getAuthHeader(token), 'Accept': 'application/vnd.github.v3+json' }
                 });
                 if (getRes.ok) {
                     const getJson = await getRes.json();
                     currentFileSha = getJson.sha;
                 }
 
-                // Generate new CSV string
                 let csv = "Date,Weight_Kg,Total_Price,Rate_1Kg,Rate_HalfKg,Notes\n";
                 purchasesData.forEach(p => {
                     csv += `${p.date},${p.weight},${p.total},${p.rate1Kg},${p.rateHalf},${p.notes || ''}\n`;
@@ -426,7 +584,7 @@
                 const putRes = await fetch(putUrl, {
                     method: 'PUT',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
+                        'Authorization': getAuthHeader(token),
                         'Accept': 'application/vnd.github.v3+json',
                         'Content-Type': 'application/json'
                     },
@@ -444,7 +602,7 @@
                     toast('✅ Committed & saved to GitHub CSV successfully!');
                 } else {
                     const err = await putRes.json();
-                    toast('⚠️ GitHub commit failed: ' + (err.message || 'Check token permissions'));
+                    toast('⚠️ GitHub commit failed: ' + (err.message || 'Check permissions'));
                 }
             } catch(e) {
                 toast('Network error committing to GitHub');
@@ -454,7 +612,6 @@
             }
         }
 
-        // 3. Render Dashboard
         function renderDashboard() {
             let totalWeight = 0;
             let totalInvested = 0;
@@ -493,7 +650,6 @@
             document.getElementById('purchaseCountDisplay').textContent = `${purchasesData.length} Purchases`;
         }
 
-        // 4. Form and UI Events
         function setupEvents() {
             document.querySelectorAll('.preset-chips .chip').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -536,7 +692,6 @@
                     rKg = p; rHalf = p * 0.5; total = rKg * wKg;
                 }
 
-                // Add to list
                 purchasesData.unshift({
                     date: d, weight: wKg, total: total, rate1Kg: rKg, rateHalf: rHalf, notes: n
                 });
@@ -548,7 +703,6 @@
                 document.getElementById('notesInput').value = '';
                 calcPreview();
 
-                // Commit directly to GitHub CSV
                 await commitCSVToGitHub(`Add purchase: ${wKg}Kg on ${d}`);
             });
 
@@ -583,7 +737,6 @@
             }
         };
 
-        // Modal Settings Handling
         function openSettingsModal() {
             document.getElementById('settingsModal').style.display = 'flex';
         }
@@ -603,27 +756,38 @@
 
             updateSyncBadge(!!(token && user && repo));
         }
-        function saveGitHubSettings() {
+
+        async function saveSettings() {
+            const newPin = document.getElementById('newMasterPin').value.trim();
+            if (newPin) {
+                if (newPin.length < 4) {
+                    toast('Passcode must be at least 4 characters');
+                    return;
+                }
+                const h = await sha256(newPin);
+                localStorage.setItem('sv_pin_hash', h);
+                document.getElementById('newMasterPin').value = '';
+                toast('🔒 Passcode updated successfully!');
+            }
+
             const user = document.getElementById('ghUsername').value.trim();
             const repo = document.getElementById('ghRepo').value.trim();
             const branch = document.getElementById('ghBranch').value.trim() || 'main';
             const token = document.getElementById('ghToken').value.trim();
 
-            if (!user || !repo || !token) {
-                toast('Please fill in username, repository, and token');
-                return;
+            if (user && repo && token) {
+                localStorage.setItem('gh_user', user);
+                localStorage.setItem('gh_repo', repo);
+                localStorage.setItem('gh_branch', branch);
+                localStorage.setItem('gh_token', token);
+                updateSyncBadge(true);
+                toast('✅ GitHub Connected!');
+                loadCSVData();
             }
 
-            localStorage.setItem('gh_user', user);
-            localStorage.setItem('gh_repo', repo);
-            localStorage.setItem('gh_branch', branch);
-            localStorage.setItem('gh_token', token);
-
             closeSettingsModal();
-            updateSyncBadge(true);
-            toast('✅ GitHub Connected! Loading purchases...');
-            loadCSVData();
         }
+
         function updateSyncBadge(isConnected) {
             const dot = document.getElementById('syncDot');
             const text = document.getElementById('syncText');
@@ -636,7 +800,6 @@
             }
         }
 
-        // Export Utilities
         function exportToExcel() {
             const wsData = [["Date", "Weight (Kg)", "Total Price (INR)", "Rate per 1 Kg (INR)", "Rate per 1/2 Kg (INR)", "Notes"]];
             purchasesData.forEach(p => wsData.push([p.date, p.weight, p.total, p.rate1Kg, p.rateHalf, p.notes]));
@@ -656,7 +819,6 @@
             a.click();
         }
 
-        // UTF-8 Base64 Helpers for GitHub API
         function encodeBase64Utf8(str) {
             return btoa(unescape(encodeURIComponent(str)));
         }
