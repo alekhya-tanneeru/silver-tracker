@@ -1068,7 +1068,7 @@
                     const res = await fetch(file + '?_t=' + Date.now());
                     if (res.ok) {
                         const text = await res.text();
-                        if (text && text.includes(',')) {
+                        if (text && (text.includes(',') || text.includes('\t') || text.includes(';'))) {
                             currentProfile.filename = file;
                             updateProfileInStorage(currentProfile);
                             parseCSV(text);
@@ -1088,17 +1088,28 @@
         function parseCSV(csvText) {
             const lines = csvText.trim().split('\n');
             let parsed = [];
+            if (lines.length < 2) return;
+
+            // Auto-detect delimiter from header: Comma (,), Tab (\t), or Semicolon (;)
+            const header = lines[0];
+            let delimiter = ',';
+            if (header.includes('\t')) {
+                delimiter = '\t';
+            } else if (header.includes(';') && !header.includes(',')) {
+                delimiter = ';';
+            }
+
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
-                const parts = line.split(',');
+                const parts = line.split(delimiter);
                 if (parts.length >= 3) {
                     const date = parts[0].trim();
                     const weight = parseFloat(parts[1]) || 0;
                     const total = parseFloat(parts[2]) || 0;
                     const rate1Kg = parts[3] ? parseFloat(parts[3]) : (weight > 0 ? total / weight : 0);
                     const rateHalf = parts[4] ? parseFloat(parts[4]) : rate1Kg * 0.5;
-                    const notes = parts.slice(5).join(',').replace(/^"|"$/g, '').trim();
+                    const notes = parts.slice(5).join(delimiter).replace(/^"|"$/g, '').trim();
                     parsed.push({ date, weight, total, rate1Kg, rateHalf, notes });
                 }
             }
