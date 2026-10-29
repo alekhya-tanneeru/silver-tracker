@@ -293,6 +293,8 @@
                 </div>
                 <button class="btn btn-secondary" onclick="exportToExcel()">Download Excel (.xlsx)</button>
                 <button class="btn btn-secondary" onclick="exportToCSV()">Download CSV</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('csvFileInput').click()" title="Import/upload a CSV spreadsheet directly">📥 Import CSV</button>
+                <input type="file" id="csvFileInput" accept=".csv" style="display: none;" onchange="handleCSVFileImport(event)">
             </div>
         </div>
     </header>
@@ -637,7 +639,7 @@
                     <div style="margin-bottom: 0.6rem;">
                         <span style="font-size: 0.85rem; font-weight: 700; color: #fff;">☁️ GitHub Cloud Sync</span>
                         <p style="font-size: 0.75rem; color: var(--silver-400); margin-top: 0.2rem;">
-                            Optionally connect GitHub to automatically synchronize purchases securely.
+                            Connect your GitHub repo to automatically commit and load CSV files directly on GitHub.
                         </p>
                     </div>
                     <div class="form-group" style="margin-bottom: 0.65rem;">
@@ -649,17 +651,21 @@
                         <input type="text" id="ghRepo" placeholder="e.g. silver-tracker" class="form-control">
                     </div>
                     <div class="form-group" style="margin-bottom: 0.65rem;">
-                        <label class="form-label">Branch</label>
-                        <input type="text" id="ghBranch" value="main" class="form-control">
+                        <label class="form-label">Branch (usually main or master)</label>
+                        <input type="text" id="ghBranch" placeholder="main or master" class="form-control">
                     </div>
                     <div class="form-group" style="margin-bottom: 0.75rem;">
-                        <label class="form-label">GitHub Personal Access Token</label>
+                        <label class="form-label">GitHub Personal Access Token (Classic)</label>
                         <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx" class="form-control">
                         <p class="help-text">
-                            Create a token at <a href="https://github.com/settings/tokens/new" target="_blank">github.com/settings/tokens</a> with <strong>repo</strong> permissions. Stored securely in your browser only.
+                            👉 <a href="https://github.com/settings/tokens/new?scopes=repo&description=SilverVault" target="_blank">Click here to generate token with 'repo' scope</a> (stored securely in your browser only).
                         </p>
                     </div>
-                    <button class="btn btn-primary" onclick="saveGitHubSettings()">Save GitHub Settings</button>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                        <button class="btn btn-primary" onclick="saveGitHubSettings()" style="flex: 1;">Save Settings</button>
+                        <button class="btn btn-secondary" onclick="testAndDiagnoseGitHubConnection()" style="white-space: nowrap;">🔍 Test &amp; Sync Now</button>
+                    </div>
+                    <div id="ghSyncDiagnostic" style="display: none; margin-top: 0.75rem; background: rgba(15, 23, 42, 0.95); border: 1px solid var(--border-silver); border-radius: var(--radius-md); padding: 0.75rem; font-size: 0.75rem; font-family: monospace; line-height: 1.5; white-space: pre-wrap;"></div>
                 </div>
             </div>
         </div>
@@ -1646,6 +1652,139 @@
             a.click();
             toast(`📥 CSV file downloaded`);
         }
+
+        window.handleCSVFileImport = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(evt) {
+                const text = evt.target.result;
+                if (!text || !text.includes(',')) {
+                    toast('❌ Invalid CSV file');
+                    return;
+                }
+                parseCSV(text);
+                saveCurrentProfileCache();
+                renderDashboard();
+                toast(`✅ Loaded ${purchasesData.length} records for ${currentProfile ? currentProfile.name : 'user'}!`);
+                await commitCSVToGitHub('Import CSV data');
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        };
+
+        window.testAndDiagnoseGitHubConnection = async function() {
+            const user = document.getElementById('ghUsername').value.trim();
+            const repo = document.getElementById('ghRepo').value.trim();
+            let branch = document.getElementById('ghBranch').value.trim() || 'main';
+            const token = document.getElementById('ghToken').value.trim();
+            const diag = document.getElementById('ghSyncDiagnostic');
+            diag.style.display = 'block';
+            diag.style.color = '#cbd5e1';
+            diag.textContent = '🔍 Testing GitHub connection...\n\n';
+
+            if (!token || !user || !repo) {
+                diag.textContent += '❌ Please enter GitHub Username, Repo name, and Token.\n';
+                return;
+            }
+
+            // Step 1: Check Token & User authentication
+            try {
+                const userRes = await fetch('https://api.github.com/user', {
+                    headers: { 'Authorization': getAuthHeader(token), 'Accept': 'application/vnd.github.v3+json' }
+                });
+                if (userRes.ok) {
+                    const uData = await userRes.json();
+                    diag.textContent += `✅ Token verified: Authenticated as @${uData.login}\n`;
+                } else {
+                    diag.textContent += `❌ Token invalid (${userRes.status}): Please check your Personal Access Token.\n`;
+                    return;
+                }
+            } catch(e) {
+                diag.textContent += `❌ Network error connecting to GitHub: ${e.message}\n`;
+                return;
+            }
+
+            // Step 2: Check Repository access
+            try {
+                const repoRes = await fetch(`https://api.github.com/repos/${user}/${repo}`, {
+                    headers: { 'Authorization': getAuthHeader(token), 'Accept': 'application/vnd.github.v3+json' }
+                });
+                if (repoRes.ok) {
+                    const rData = await repoRes.json();
+                    diag.textContent += `✅ Repository confirmed: ${rData.full_name} (${rData.private ? 'Private' : 'Public'})\n`;
+                    if (!document.getElementById('ghBranch').value.trim()) {
+                        branch = rData.default_branch || 'main';
+                        document.getElementById('ghBranch').value = branch;
+                    }
+                } else {
+                    diag.textContent += `❌ Repository "${user}/${repo}" not accessible (${repoRes.status}). Check repo name or token "repo" scope.\n`;
+                    return;
+                }
+            } catch(e) {
+                diag.textContent += `❌ Error verifying repository: ${e.message}\n`;
+                return;
+            }
+
+            // Step 3: Check branch
+            try {
+                let branchRes = await fetch(`https://api.github.com/repos/${user}/${repo}/branches/${branch}`, {
+                    headers: { 'Authorization': getAuthHeader(token) }
+                });
+                if (!branchRes.ok && branch === 'main') {
+                    const masterRes = await fetch(`https://api.github.com/repos/${user}/${repo}/branches/master`, {
+                        headers: { 'Authorization': getAuthHeader(token) }
+                    });
+                    if (masterRes.ok) {
+                        branch = 'master';
+                        document.getElementById('ghBranch').value = 'master';
+                        diag.textContent += `ℹ️ Auto-switched to active branch: master\n`;
+                    }
+                } else if (branchRes.ok) {
+                    diag.textContent += `✅ Branch "${branch}" confirmed.\n`;
+                } else {
+                    diag.textContent += `⚠️ Branch "${branch}" not found on repository.\n`;
+                }
+            } catch(e) {}
+
+            // Step 4: Scan for active profile's CSV file
+            if (currentProfile) {
+                diag.textContent += `\n📂 Scanning for user "${currentProfile.name}" CSV on GitHub...\n`;
+                const candidates = getCandidateFilenames(currentProfile);
+                let foundFile = null;
+                for (const f of candidates) {
+                    try {
+                        const fRes = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/${f}?ref=${branch}&_t=` + Date.now(), {
+                            headers: { 'Authorization': getAuthHeader(token) }
+                        });
+                        if (fRes.ok) {
+                            foundFile = f;
+                            const fJson = await fRes.json();
+                            currentFileSha = fJson.sha;
+                            currentProfile.filename = f;
+                            updateProfileInStorage(currentProfile);
+                            const content = decodeBase64Utf8(fJson.content);
+                            parseCSV(content);
+                            saveCurrentProfileCache();
+                            renderDashboard();
+                            diag.textContent += `✅ FOUND FILE: "${f}" (${purchasesData.length} records loaded into dashboard!)\n`;
+                            break;
+                        }
+                    } catch(e) {}
+                }
+                if (!foundFile) {
+                    diag.textContent += `ℹ️ Checked: ${candidates.join(', ')}\nFile not on GitHub yet. It will be created automatically when you record a purchase.\n`;
+                }
+            }
+
+            // Save verified credentials
+            localStorage.setItem('gh_user', user);
+            localStorage.setItem('gh_repo', repo);
+            localStorage.setItem('gh_branch', branch);
+            localStorage.setItem('gh_token', token);
+            updateSyncBadge(true);
+            diag.textContent += `\n🎉 GitHub cloud sync is ACTIVE and verified!`;
+        };
 
         function encodeBase64Utf8(str) {
             return btoa(unescape(encodeURIComponent(str)));
