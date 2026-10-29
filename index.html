@@ -209,40 +209,62 @@
         .help-text { font-size: 0.78rem; color: var(--silver-400); margin-top: 0.35rem; line-height: 1.4; }
         .help-text a { color: var(--accent-blue); text-decoration: none; }
 
+        /* Profile Badge in Navbar */
+        .profile-badge-nav {
+            display: flex; align-items: center; gap: 0.5rem;
+            background: rgba(30, 41, 59, 0.75); border: 1px solid var(--border-silver);
+            padding: 0.4rem 0.85rem; border-radius: var(--radius-md);
+        }
+        .profile-nav-icon { font-size: 1.05rem; }
+        .profile-nav-name { font-size: 0.85rem; font-weight: 700; color: #fff; }
+
         /* Login Screen Overlay */
         .lock-screen-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(10, 14, 23, 0.97); backdrop-filter: blur(25px);
             display: none; align-items: center; justify-content: center; z-index: 999;
+            padding: 1rem;
         }
         .login-card {
             background: #111827; border: 1px solid var(--border-silver); border-radius: var(--radius-lg);
-            width: 90%; max-width: 400px; padding: 2.75rem 2.25rem; text-align: center;
+            width: 100%; max-width: 400px; padding: 2.25rem 2rem; text-align: center;
             box-shadow: 0 25px 70px rgba(0, 0, 0, 0.9);
+            animation: fadeIn 0.25s ease-in-out;
         }
         .login-logo {
-            width: 60px; height: 60px; margin: 0 auto 1.25rem auto;
+            width: 54px; height: 54px; margin: 0 auto 1rem auto;
             background: linear-gradient(135deg, #1e293b, #0f172a);
             border: 1px solid var(--border-silver); border-radius: var(--radius-md);
             display: flex; align-items: center; justify-content: center;
-            font-size: 1.8rem; box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+            font-size: 1.7rem; box-shadow: 0 8px 25px rgba(0,0,0,0.5);
         }
-        .login-card h2 { font-size: 1.45rem; font-weight: 800; color: #fff; margin-bottom: 0.4rem; }
-        .login-card p { font-size: 0.85rem; color: var(--silver-400); margin-bottom: 1.75rem; line-height: 1.4; }
-        .login-input {
-            text-align: center; font-size: 1.3rem; letter-spacing: 0.35em; font-family: 'Space Grotesk', monospace;
-            padding: 0.85rem 1rem; width: 100%; margin-bottom: 1.25rem; border-radius: var(--radius-md);
-        }
-        .login-input:focus { border-color: #fff; box-shadow: 0 0 15px rgba(203, 213, 225, 0.25); }
+        .login-card h2 { font-size: 1.35rem; font-weight: 800; color: #fff; margin-bottom: 0.35rem; }
+        .login-card p { font-size: 0.82rem; color: var(--silver-400); margin-bottom: 1.3rem; line-height: 1.4; }
         .btn-login {
             background: linear-gradient(135deg, #f8fafc, #cbd5e1); color: #0f172a;
-            width: 100%; padding: 0.85rem; font-size: 0.95rem; font-weight: 700;
-            border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s;
+            width: 100%; padding: 0.8rem; font-size: 0.92rem; font-weight: 700;
+            border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s; border: none;
         }
         .btn-login:hover {
             background: linear-gradient(135deg, #ffffff, #e2e8f0);
             box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2);
             transform: translateY(-1px);
+        }
+        .link-btn {
+            background: none; border: none; color: var(--accent-blue);
+            font-size: 0.8rem; font-weight: 600; cursor: pointer; padding: 0; text-decoration: none;
+        }
+        .link-btn:hover { text-decoration: underline; color: #fff; }
+
+        /* Profile Manager List in Settings */
+        .settings-profile-row {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md); padding: 0.6rem 0.8rem;
+        }
+        .settings-profile-row.active-profile-row {
+            border-color: rgba(56, 189, 248, 0.4);
+            background: rgba(56, 189, 248, 0.05);
         }
     </style>
 </head>
@@ -258,10 +280,14 @@
                 </div>
             </div>
             <div class="nav-actions">
-                <button class="btn btn-secondary" onclick="lockVault()" title="Lock dashboard immediately">
+                <div class="profile-badge-nav" id="navProfileBadge" title="Active user">
+                    <span class="profile-nav-icon">👤</span>
+                    <span class="profile-nav-name" id="navProfileName">Profile</span>
+                </div>
+                <button class="btn btn-secondary" onclick="logout()" title="Logout and lock vault">
                     🔒 Logout
                 </button>
-                <div class="sync-badge" onclick="openSettingsModal()" title="Click to configure automatic GitHub sync or change PIN">
+                <div class="sync-badge" onclick="openSettingsModal()" title="Click to configure cloud settings">
                     <span class="status-dot inactive" id="syncDot"></span>
                     <span id="syncText">Sync: Connect</span>
                 </div>
@@ -315,7 +341,7 @@
             <!-- Portfolio Insights -->
             <div class="card" style="padding: 1.5rem; margin-top: 1.5rem;">
                 <h2 style="font-size: 1.15rem; margin-bottom: 0.5rem;">📈 Portfolio Overview</h2>
-                <p style="font-size: 0.85rem; color: var(--silver-400);">Summary breakdown of your silver acquisitions recorded in <code>silver_purchases.csv</code>.</p>
+                <p style="font-size: 0.85rem; color: var(--silver-400);">Summary breakdown for <strong id="overviewProfileName" style="color: #fff;">User</strong>.</p>
                 
                 <div class="insights-grid">
                     <div class="insight-card">
@@ -340,8 +366,11 @@
         <section class="tab-pane" id="recordTab">
             <div class="card" style="max-width: 700px; margin: 0 auto;">
                 <div class="card-header">
-                    <h2>Record New Silver Purchase</h2>
-                    <span style="font-size: 0.8rem; color: var(--silver-400);">Automatically syncs to GitHub</span>
+                    <div>
+                        <h2>Record New Silver Purchase</h2>
+                        <span style="font-size: 0.78rem; color: var(--silver-400);">Recording as: <strong id="recordProfileName" style="color: #fff;">Profile</strong></span>
+                    </div>
+                    <span style="font-size: 0.8rem; color: var(--silver-400);">Cloud Sync</span>
                 </div>
                 <form id="purchaseForm" class="purchase-form">
                     <div class="form-group">
@@ -404,7 +433,10 @@
         <section class="tab-pane" id="historyTab">
             <div class="card">
                 <div class="card-header">
-                    <h2>Purchase History</h2>
+                    <div>
+                        <h2>Purchase History</h2>
+                        <span style="font-size: 0.78rem; color: var(--silver-400);">Transactions for: <strong id="historyProfileName" style="color: #fff;">Profile</strong></span>
+                    </div>
                     <input type="text" id="searchInput" placeholder="Search notes or dates..." class="form-control" style="width: 220px; padding: 0.45rem 0.75rem; font-size: 0.82rem;">
                 </div>
                 <div class="table-responsive">
@@ -493,54 +525,142 @@
 
     </main>
 
-    <!-- Professional Login Screen Overlay -->
+    <!-- Login & Profile Creation Overlay -->
     <div class="lock-screen-overlay" id="pinLockScreen">
-        <div class="login-card">
+        <!-- View 1: Standard Username & Password Login -->
+        <div class="login-card" id="loginCard">
             <div class="login-logo">🪙</div>
-            <h2 id="loginTitle">Login to SilverVault</h2>
-            <p id="loginSubtitle">Enter your passcode to access your portfolio.</p>
-            <form id="pinForm">
-                <input type="password" id="pinInputField" class="form-control login-input" maxlength="12" placeholder="Passcode" autofocus required>
-                <button type="submit" class="btn-login" id="loginBtn">Login</button>
+            <h2>SilverVault Login</h2>
+            <p>Enter your username and password to unlock your portfolio.</p>
+
+            <form id="loginForm" style="display: flex; flex-direction: column; gap: 0.85rem; text-align: left;">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" id="loginUsername" class="form-control" placeholder="Enter username" autocomplete="username" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="loginPassword" class="form-control" placeholder="Enter password" autocomplete="current-password" required>
+                </div>
+                <button type="submit" class="btn-login" id="loginBtn" style="margin-top: 0.5rem;">Log In</button>
+            </form>
+
+            <div style="margin-top: 1.25rem; padding-top: 0.85rem; border-top: 1px solid var(--border-subtle); display: flex; justify-content: center;">
+                <button type="button" class="link-btn" onclick="showCreateProfileView()">➕ Create New Profile</button>
+            </div>
+        </div>
+
+        <!-- View 2: Create Profile Form (Toggled when adding profile) -->
+        <div class="login-card" id="createProfileCard" style="display: none;">
+            <div class="login-logo">👤</div>
+            <h2 id="createProfileTitle">Create New Profile</h2>
+            <p id="createProfileSubtitle">Set up a new profile with its own username and password.</p>
+
+            <form id="createProfileForm" style="display: flex; flex-direction: column; gap: 0.85rem; text-align: left;">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" id="newProfileName" class="form-control" placeholder="Choose a username" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="newProfilePasscode" class="form-control" placeholder="Min. 4 characters" minlength="4" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Confirm Password</label>
+                    <input type="password" id="newProfilePasscodeConfirm" class="form-control" placeholder="Re-enter password" minlength="4" required>
+                </div>
+                <button type="submit" class="btn-login" id="createProfileSubmitBtn" style="margin-top: 0.4rem;">Create &amp; Log In</button>
+                <button type="button" class="btn btn-secondary" id="cancelCreateProfileBtn" onclick="hideCreateProfileView()" style="justify-content: center; width: 100%;">Back to Login</button>
             </form>
         </div>
     </div>
 
-    <!-- GitHub Sync & Security Settings Modal -->
+    <!-- Multi-Profile & GitHub Sync Settings Modal -->
     <div class="modal-overlay" id="settingsModal">
-        <div class="modal">
+        <div class="modal" style="max-height: 88vh; overflow-y: auto;">
             <div class="modal-header">
                 <h3>⚙️ Settings &amp; Security</h3>
                 <button class="close-btn" onclick="closeSettingsModal()">&times;</button>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                <div class="form-group">
-                    <label class="form-label">Change Passcode / PIN</label>
-                    <input type="password" id="newMasterPin" placeholder="Enter new passcode" class="form-control">
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                
+                <!-- Section 1: Active Profile Info & Security -->
+                <div style="background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <div>
+                            <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--silver-400);">Logged in as</span>
+                            <h4 id="settingsProfileName" style="color: #fff; font-size: 1.1rem; margin: 0.15rem 0;">User</h4>
+                        </div>
+                        <button class="btn btn-secondary" onclick="logout(); closeSettingsModal();" style="font-size: 0.75rem; padding: 0.4rem 0.75rem;">
+                            🔒 Logout
+                        </button>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 0.6rem;">
+                        <label class="form-label">Change Password</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="password" id="newMasterPin" placeholder="New password (min 4 chars)" class="form-control">
+                            <button class="btn btn-secondary" onclick="updateCurrentProfilePasscode()" style="white-space: nowrap;">Update</button>
+                        </div>
+                    </div>
                 </div>
-                <div style="border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
-                    <span style="font-size: 0.85rem; font-weight: 700; color: #fff;">GitHub Repository Connection</span>
+
+                <!-- Section 2: Manage All Profiles -->
+                <div style="background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <span style="font-size: 0.85rem; font-weight: 700; color: #fff;">👥 Registered Profiles</span>
+                        <button class="link-btn" onclick="toggleSettingsAddProfile()" id="settingsAddProfileToggleBtn">➕ Add Profile</button>
+                    </div>
+
+                    <div id="settingsAddProfileBox" style="display: none; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-silver); border-radius: var(--radius-md); padding: 0.85rem; margin-bottom: 0.75rem;">
+                        <div class="form-group" style="margin-bottom: 0.5rem;">
+                            <label class="form-label">Username</label>
+                            <input type="text" id="modalNewProfileName" placeholder="e.g. Spouse / Personal" class="form-control">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0.6rem;">
+                            <label class="form-label">Password</label>
+                            <input type="password" id="modalNewProfilePin" placeholder="Min 4 characters" class="form-control">
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-primary" onclick="createProfileFromSettings()" style="padding: 0.5rem;">Save Profile</button>
+                            <button class="btn btn-secondary" onclick="toggleSettingsAddProfile()" style="padding: 0.5rem;">Cancel</button>
+                        </div>
+                    </div>
+
+                    <div id="settingsProfilesList" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 160px; overflow-y: auto;">
+                        <!-- List of profiles injected here -->
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">GitHub Username</label>
-                    <input type="text" id="ghUsername" placeholder="e.g. your-github-username" class="form-control">
+
+                <!-- Section 3: GitHub Sync Configuration -->
+                <div>
+                    <div style="margin-bottom: 0.6rem;">
+                        <span style="font-size: 0.85rem; font-weight: 700; color: #fff;">☁️ GitHub Cloud Sync</span>
+                        <p style="font-size: 0.75rem; color: var(--silver-400); margin-top: 0.2rem;">
+                            Optionally connect GitHub to automatically synchronize purchases securely.
+                        </p>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0.65rem;">
+                        <label class="form-label">GitHub Username</label>
+                        <input type="text" id="ghUsername" placeholder="e.g. your-github-username" class="form-control">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0.65rem;">
+                        <label class="form-label">Repository Name</label>
+                        <input type="text" id="ghRepo" placeholder="e.g. silver-tracker" class="form-control">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0.65rem;">
+                        <label class="form-label">Branch</label>
+                        <input type="text" id="ghBranch" value="main" class="form-control">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label class="form-label">GitHub Personal Access Token</label>
+                        <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx" class="form-control">
+                        <p class="help-text">
+                            Create a token at <a href="https://github.com/settings/tokens/new" target="_blank">github.com/settings/tokens</a> with <strong>repo</strong> permissions. Stored securely in your browser only.
+                        </p>
+                    </div>
+                    <button class="btn btn-primary" onclick="saveGitHubSettings()">Save GitHub Settings</button>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Repository Name</label>
-                    <input type="text" id="ghRepo" placeholder="e.g. silver-tracker" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Branch</label>
-                    <input type="text" id="ghBranch" value="main" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">GitHub Personal Access Token</label>
-                    <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx" class="form-control">
-                    <p class="help-text">
-                        Create a free token: <a href="https://github.com/settings/tokens/new" target="_blank">github.com/settings/tokens</a> with <strong>repo</strong> permissions. Stored securely inside your browser only. Works with both public and private repositories.
-                    </p>
-                </div>
-                <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
             </div>
         </div>
     </div>
@@ -548,8 +668,8 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
-        // Existing 6 purchases default
-        let purchasesData = [
+        // Default purchases fallback for Primary / Default vault
+        const defaultInitialPurchases = [
             { date: "2026-10-22", weight: 0.5, total: 90000.0, rate1Kg: 180000.0, rateHalf: 90000.0, notes: "" },
             { date: "2026-10-22", weight: 0.5, total: 104000.0, rate1Kg: 208000.0, rateHalf: 104000.0, notes: "" },
             { date: "2026-10-15", weight: 0.5, total: 107350.0, rate1Kg: 214700.0, rateHalf: 107350.0, notes: "" },
@@ -558,12 +678,15 @@
             { date: "2026-02-03", weight: 0.5, total: 145650.0, rate1Kg: 291300.0, rateHalf: 145650.0, notes: "" }
         ];
 
+        let purchasesData = [];
+        let currentProfile = null;
         let calcMode = '1KG';
         let currentFileSha = null;
         let isVaultUnlocked = false;
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('purchaseDateInput').value = new Date().toISOString().split('T')[0];
+            setupProfileEvents();
             checkSecurityLock();
             setupEvents();
             setupCalcToolEvents();
@@ -571,79 +694,238 @@
         });
 
         // ==========================================
-        // 🔒 SECURITY LAYER: LOGIN & PIN
+        // 🔒 MULTI-PROFILE & SECURITY LAYER
         // ==========================================
         async function sha256(str) {
             const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
             return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
+        function getProfiles() {
+            const raw = localStorage.getItem('sv_profiles');
+            if (raw) {
+                try {
+                    const list = JSON.parse(raw);
+                    if (Array.isArray(list) && list.length > 0) return list;
+                } catch(e) {}
+            }
+            // Backward compatibility: migrate legacy single-PIN if present
+            const legacyPin = localStorage.getItem('sv_pin_hash');
+            if (legacyPin) {
+                const legacyList = [{
+                    id: 'default',
+                    name: 'Primary Vault',
+                    filename: 'silver_purchases.csv',
+                    pinHash: legacyPin,
+                    createdAt: new Date().toISOString()
+                }];
+                localStorage.setItem('sv_profiles', JSON.stringify(legacyList));
+                return legacyList;
+            }
+            return [];
+        }
+
+        function saveProfiles(profiles) {
+            localStorage.setItem('sv_profiles', JSON.stringify(profiles));
+        }
+
+        function sanitizeProfileId(name) {
+            return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || ('profile_' + Date.now());
+        }
+
+        function generateProfileFilename(id, isFirst = false) {
+            if (isFirst || id === 'default' || id === 'primary' || id === 'primary_vault') {
+                return 'silver_purchases.csv';
+            }
+            return `silver_purchases_${id}.csv`;
+        }
+
         function checkSecurityLock() {
-            const savedPinHash = localStorage.getItem('sv_pin_hash');
+            const profiles = getProfiles();
             const lockScreen = document.getElementById('pinLockScreen');
             const dashboard = document.getElementById('dashboardContent');
 
-            if (!savedPinHash) {
-                // First-time setup: prompt to create passcode
-                document.getElementById('loginTitle').textContent = 'Welcome to SilverVault';
-                document.getElementById('loginSubtitle').textContent = 'Create your passcode to secure your portfolio.';
-                document.getElementById('loginBtn').textContent = 'Login';
+            if (profiles.length === 0) {
                 lockScreen.style.display = 'flex';
                 dashboard.style.filter = 'blur(15px)';
-            } else if (!isVaultUnlocked) {
-                // Standard login
-                document.getElementById('loginTitle').textContent = 'Login to SilverVault';
-                document.getElementById('loginSubtitle').textContent = 'Enter your passcode to access your portfolio.';
-                document.getElementById('loginBtn').textContent = 'Login';
+                showCreateProfileView(true);
+                return;
+            }
+
+            if (!isVaultUnlocked) {
                 lockScreen.style.display = 'flex';
                 dashboard.style.filter = 'blur(15px)';
+                document.getElementById('loginUsername').value = '';
+                document.getElementById('loginPassword').value = '';
+                setTimeout(() => document.getElementById('loginUsername').focus(), 150);
             }
         }
 
-        document.getElementById('pinForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const entered = document.getElementById('pinInputField').value.trim();
-            const savedPinHash = localStorage.getItem('sv_pin_hash');
+        function setupProfileEvents() {
+            // Login Form submission
+            document.getElementById('loginForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const enteredUser = document.getElementById('loginUsername').value.trim();
+                const enteredPass = document.getElementById('loginPassword').value;
 
-            if (!savedPinHash) {
-                if (entered.length < 4) {
-                    toast('Passcode must be at least 4 characters');
+                if (!enteredUser || !enteredPass) {
+                    toast('Please enter both username and password');
                     return;
                 }
-                const hash = await sha256(entered);
-                localStorage.setItem('sv_pin_hash', hash);
-                unlockVault();
-                toast('✅ Passcode created & logged in successfully!');
-            } else {
-                const hash = await sha256(entered);
-                if (hash === savedPinHash) {
-                    unlockVault();
-                    toast('🔓 Logged in successfully');
-                } else {
-                    toast('❌ Incorrect passcode');
-                    document.getElementById('pinInputField').value = '';
-                    document.getElementById('pinInputField').focus();
+
+                const profiles = getProfiles();
+                if (profiles.length === 0) {
+                    showCreateProfileView(true);
+                    return;
                 }
+
+                // Match against profile name or profile id (case-insensitive)
+                const matched = profiles.find(p => 
+                    p.name.toLowerCase() === enteredUser.toLowerCase() || 
+                    p.id.toLowerCase() === enteredUser.toLowerCase()
+                );
+
+                if (!matched) {
+                    toast('❌ User not found. Check username or create a new profile.');
+                    return;
+                }
+
+                const hash = await sha256(enteredPass);
+                if (hash === matched.pinHash) {
+                    currentProfile = matched;
+                    unlockVault();
+                    toast(`🔓 Welcome, ${currentProfile.name}!`);
+                } else {
+                    toast('❌ Incorrect password');
+                    document.getElementById('loginPassword').value = '';
+                    document.getElementById('loginPassword').focus();
+                }
+            });
+
+            // Create Profile Form submission
+            document.getElementById('createProfileForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('newProfileName').value.trim();
+                const pass = document.getElementById('newProfilePasscode').value;
+                const confirm = document.getElementById('newProfilePasscodeConfirm').value;
+
+                if (!name) { toast('Please choose a username'); return; }
+                if (pass.length < 4) { toast('Password must be at least 4 characters'); return; }
+                if (pass !== confirm) { toast('Passwords do not match'); return; }
+
+                const profiles = getProfiles();
+                if (profiles.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+                    toast('This username already exists');
+                    return;
+                }
+
+                const isFirst = (profiles.length === 0);
+                let baseId = sanitizeProfileId(name);
+                if (isFirst && (baseId === 'primary_vault' || baseId === 'primary' || baseId === 'default')) {
+                    baseId = 'default';
+                }
+                let id = baseId;
+                let counter = 1;
+                while (profiles.some(p => p.id === id)) {
+                    id = `${baseId}_${counter++}`;
+                }
+
+                const filename = generateProfileFilename(id, isFirst);
+                const pinHash = await sha256(pass);
+
+                const newProfile = {
+                    id: id,
+                    name: name,
+                    filename: filename,
+                    pinHash: pinHash,
+                    createdAt: new Date().toISOString()
+                };
+
+                profiles.push(newProfile);
+                saveProfiles(profiles);
+
+                // Reset and log in as new profile
+                document.getElementById('newProfileName').value = '';
+                document.getElementById('newProfilePasscode').value = '';
+                document.getElementById('newProfilePasscodeConfirm').value = '';
+                hideCreateProfileView();
+
+                currentProfile = newProfile;
+                unlockVault();
+                toast(`✅ Profile "${newProfile.name}" created and logged in!`);
+            });
+        }
+
+        function showCreateProfileView(isFirstTime = false) {
+            document.getElementById('loginCard').style.display = 'none';
+            const createCard = document.getElementById('createProfileCard');
+            createCard.style.display = 'block';
+
+            const cancelBtn = document.getElementById('cancelCreateProfileBtn');
+            const titleEl = document.getElementById('createProfileTitle');
+            const subEl = document.getElementById('createProfileSubtitle');
+            const nameIn = document.getElementById('newProfileName');
+
+            if (isFirstTime) {
+                cancelBtn.style.display = 'none';
+                titleEl.textContent = 'Welcome to SilverVault';
+                subEl.textContent = 'Create your username & password to get started.';
+                nameIn.value = '';
+            } else {
+                cancelBtn.style.display = 'block';
+                titleEl.textContent = 'Create New Profile';
+                subEl.textContent = 'Set up a new profile with its own username and password.';
+                nameIn.value = '';
             }
-        });
+            setTimeout(() => nameIn.focus(), 150);
+        }
+        window.showCreateProfileView = showCreateProfileView;
+
+        function hideCreateProfileView() {
+            document.getElementById('createProfileCard').style.display = 'none';
+            document.getElementById('loginCard').style.display = 'block';
+            document.getElementById('newProfileName').value = '';
+            document.getElementById('newProfilePasscode').value = '';
+            document.getElementById('newProfilePasscodeConfirm').value = '';
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            setTimeout(() => document.getElementById('loginUsername').focus(), 150);
+        }
+        window.hideCreateProfileView = hideCreateProfileView;
 
         function unlockVault() {
+            if (!currentProfile) return;
             isVaultUnlocked = true;
             document.getElementById('pinLockScreen').style.display = 'none';
             document.getElementById('dashboardContent').style.filter = 'none';
-            document.getElementById('pinInputField').value = '';
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+
+            // Update user indicators in UI
+            document.getElementById('navProfileName').textContent = currentProfile.name;
+            document.getElementById('overviewProfileName').textContent = currentProfile.name;
+            document.getElementById('recordProfileName').textContent = currentProfile.name;
+            document.getElementById('historyProfileName').textContent = currentProfile.name;
+
             loadSavedSettings();
             loadCSVData();
         }
 
-        window.lockVault = function() {
+        function logout() {
             isVaultUnlocked = false;
+            currentProfile = null;
+            purchasesData = []; // Purge all records from memory
             document.getElementById('dashboardContent').style.filter = 'blur(15px)';
             document.getElementById('pinLockScreen').style.display = 'flex';
-            document.getElementById('pinInputField').value = '';
-            document.getElementById('pinInputField').focus();
+            hideCreateProfileView();
+            document.getElementById('navProfileName').textContent = 'Profile';
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            setTimeout(() => document.getElementById('loginUsername').focus(), 150);
             toast('🔒 Logged out');
-        };
+        }
+        window.logout = logout;
+        window.lockVault = logout;
 
         // Auto-lock after 15 minutes of inactivity
         function setupAutoLockTimer() {
@@ -651,7 +933,7 @@
             const reset = () => {
                 clearTimeout(timeout);
                 timeout = setTimeout(() => {
-                    if (isVaultUnlocked) lockVault();
+                    if (isVaultUnlocked) logout();
                 }, 15 * 60 * 1000);
             };
             window.onload = reset;
@@ -659,23 +941,32 @@
             document.onkeypress = reset;
         }
 
-        // 1. Tab Switching
-        window.switchTab = function(tabId) {
-            document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-
-            const targetPane = document.getElementById(tabId);
-            if (targetPane) targetPane.classList.add('active');
-
-            const buttons = document.querySelectorAll('.tab-btn');
-            if (tabId === 'dashboardTab') buttons[0].classList.add('active');
-            else if (tabId === 'recordTab') buttons[1].classList.add('active');
-            else if (tabId === 'historyTab') buttons[2].classList.add('active');
-            else if (tabId === 'calcTab') {
-                buttons[3].classList.add('active');
-                updateSimulation();
+        // ==========================================
+        // 📊 DATA & CSV SYNC LAYER (PER PROFILE)
+        // ==========================================
+        function saveCurrentProfileCache() {
+            if (!currentProfile) return;
+            localStorage.setItem('silver_purchases_cache_' + currentProfile.id, JSON.stringify(purchasesData));
+            if (currentProfile.id === 'default') {
+                localStorage.setItem('silver_purchases_cache', JSON.stringify(purchasesData));
             }
-        };
+        }
+
+        function loadFromProfileCache() {
+            const cached = localStorage.getItem('silver_purchases_cache_' + currentProfile.id);
+            if (cached) {
+                try { purchasesData = JSON.parse(cached); return; } catch(e){}
+            }
+            if (currentProfile.id === 'default') {
+                const leg = localStorage.getItem('silver_purchases_cache');
+                if (leg) {
+                    try { purchasesData = JSON.parse(leg); return; } catch(e){}
+                }
+                purchasesData = JSON.parse(JSON.stringify(defaultInitialPurchases));
+            } else {
+                purchasesData = [];
+            }
+        }
 
         function getAuthHeader(token) {
             if (!token) return '';
@@ -684,16 +975,20 @@
             return 'token ' + t;
         }
 
-        // 2. Load CSV data (from GitHub API if token set, else from file / cache)
+        // Load CSV data for the current active profile
         async function loadCSVData() {
+            if (!currentProfile) return;
             const token = localStorage.getItem('gh_token');
             const owner = localStorage.getItem('gh_user');
             const repo = localStorage.getItem('gh_repo');
             const branch = localStorage.getItem('gh_branch') || 'main';
+            const filename = currentProfile.filename || `silver_purchases_${currentProfile.id}.csv`;
+
+            purchasesData = []; // clear before load
 
             if (token && owner && repo) {
                 try {
-                    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/silver_purchases.csv?ref=${branch}&_t=` + Date.now();
+                    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filename}?ref=${branch}&_t=` + Date.now();
                     const res = await fetch(apiUrl, {
                         headers: {
                             'Authorization': getAuthHeader(token),
@@ -705,27 +1000,33 @@
                         currentFileSha = json.sha;
                         const content = decodeBase64Utf8(json.content);
                         parseCSV(content);
+                        saveCurrentProfileCache();
+                        renderDashboard();
+                        return;
+                    } else if (res.status === 404) {
+                        // File not on GitHub yet: will create on first commit
+                        currentFileSha = null;
+                        loadFromProfileCache();
                         renderDashboard();
                         return;
                     }
                 } catch(e) {
-                    console.log('GitHub API fetch failed, trying local backup');
+                    console.log('GitHub API fetch failed, trying local backup / cache', e);
                 }
             }
 
-            // Fallback: Read local silver_purchases.csv
+            // Fallback: Read local file (for local server or gh-pages deploy)
             try {
-                const res = await fetch('silver_purchases.csv?_t=' + Date.now());
+                const res = await fetch(filename + '?_t=' + Date.now());
                 if (res.ok) {
                     const text = await res.text();
                     parseCSV(text);
+                    saveCurrentProfileCache();
                 } else {
-                    const local = localStorage.getItem('silver_purchases_cache');
-                    if (local) purchasesData = JSON.parse(local);
+                    loadFromProfileCache();
                 }
             } catch(e) {
-                const local = localStorage.getItem('silver_purchases_cache');
-                if (local) purchasesData = JSON.parse(local);
+                loadFromProfileCache();
             }
             renderDashboard();
         }
@@ -743,45 +1044,61 @@
                     const total = parseFloat(parts[2]) || 0;
                     const rate1Kg = parts[3] ? parseFloat(parts[3]) : (weight > 0 ? total / weight : 0);
                     const rateHalf = parts[4] ? parseFloat(parts[4]) : rate1Kg * 0.5;
-                    const notes = parts.slice(5).join(',').trim();
+                    const notes = parts.slice(5).join(',').replace(/^"|"$/g, '').trim();
                     parsed.push({ date, weight, total, rate1Kg, rateHalf, notes });
                 }
             }
-            if (parsed.length > 0) purchasesData = parsed;
+            purchasesData = parsed;
         }
 
-        // 3. Commit updated CSV directly to GitHub repository
+        // Commit CSV for the current active profile to GitHub
         async function commitCSVToGitHub(actionDesc) {
+            if (!currentProfile) return;
             const token = localStorage.getItem('gh_token');
             const owner = localStorage.getItem('gh_user');
             const repo = localStorage.getItem('gh_repo');
             const branch = localStorage.getItem('gh_branch') || 'main';
+            const filename = currentProfile.filename || `silver_purchases_${currentProfile.id}.csv`;
 
             if (!token || !owner || !repo) {
-                toast('Saved in browser! Connect GitHub in Settings to auto-commit.');
+                toast(`Saved locally! Connect GitHub in Settings to auto-commit to ${filename}.`);
                 return;
             }
 
             const btn = document.getElementById('saveBtn');
-            btn.disabled = true;
-            btn.textContent = 'Committing to GitHub...';
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Committing to GitHub...';
+            }
 
             try {
-                const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/silver_purchases.csv?ref=${branch}&_t=` + Date.now();
+                // Fetch latest SHA for this profile's file if it exists
+                const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filename}?ref=${branch}&_t=` + Date.now();
                 const getRes = await fetch(getUrl, {
                     headers: { 'Authorization': getAuthHeader(token), 'Accept': 'application/vnd.github.v3+json' }
                 });
                 if (getRes.ok) {
                     const getJson = await getRes.json();
                     currentFileSha = getJson.sha;
+                } else if (getRes.status === 404) {
+                    currentFileSha = null; // PUT without sha will create the new file on GitHub
                 }
 
                 let csv = "Date,Weight_Kg,Total_Price,Rate_1Kg,Rate_HalfKg,Notes\n";
                 purchasesData.forEach(p => {
-                    csv += `${p.date},${p.weight},${p.total},${p.rate1Kg},${p.rateHalf},${p.notes || ''}\n`;
+                    csv += `${p.date},${p.weight},${p.total},${p.rate1Kg},${p.rateHalf},"${p.notes || ''}"\n`;
                 });
 
-                const putUrl = `https://api.github.com/repos/${owner}/${repo}/contents/silver_purchases.csv`;
+                const putUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filename}`;
+                const bodyPayload = {
+                    message: actionDesc || `Update ${filename} via SilverVault [Profile: ${currentProfile.name}]`,
+                    content: encodeBase64Utf8(csv),
+                    branch: branch
+                };
+                if (currentFileSha) {
+                    bodyPayload.sha = currentFileSha;
+                }
+
                 const putRes = await fetch(putUrl, {
                     method: 'PUT',
                     headers: {
@@ -789,31 +1106,30 @@
                         'Accept': 'application/vnd.github.v3+json',
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        message: actionDesc || 'Update silver purchases via SilverVault',
-                        content: encodeBase64Utf8(csv),
-                        sha: currentFileSha,
-                        branch: branch
-                    })
+                    body: JSON.stringify(bodyPayload)
                 });
 
                 if (putRes.ok) {
                     const putJson = await putRes.json();
                     currentFileSha = putJson.content.sha;
-                    toast('✅ Committed & saved to GitHub CSV successfully!');
+                    toast(`✅ Changes saved & synced to cloud!`);
                 } else {
                     const err = await putRes.json();
-                    toast('⚠️ GitHub commit failed: ' + (err.message || 'Check permissions'));
+                    toast('⚠️ Cloud sync failed: ' + (err.message || 'Check permissions'));
                 }
             } catch(e) {
-                toast('Network error committing to GitHub');
+                toast('Network error during sync');
             } finally {
-                btn.disabled = false;
-                btn.textContent = 'Save Purchase';
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Save Purchase';
+                }
             }
         }
 
-        // 4. Render Dashboard Metrics, Insights & Table
+        // ==========================================
+        // 📈 DASHBOARD & METRICS RENDERING
+        // ==========================================
         function renderDashboard() {
             let totalWeight = 0;
             let totalInvested = 0;
@@ -825,27 +1141,41 @@
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
 
-            purchasesData.forEach((p, idx) => {
-                totalWeight += p.weight;
-                totalInvested += p.total;
-                if (p.rate1Kg < lowestRate) lowestRate = p.rate1Kg;
-                if (p.rate1Kg > highestRate) highestRate = p.rate1Kg;
-                if (idx === 0) latestDate = p.date;
+            if (purchasesData.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td colspan="7" style="text-align:center;padding:2.5rem 1rem;color:var(--silver-400);">
+                        <div style="font-size:1.6rem;margin-bottom:0.5rem;">🪙</div>
+                        <strong>No purchases recorded yet for ${currentProfile ? currentProfile.name : 'this user'}.</strong><br>
+                        <span style="font-size:0.8rem;display:inline-block;margin-top:0.35rem;">
+                            Switch to the "➕ Record Silver Purchase" tab above to add transactions.
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            } else {
+                purchasesData.forEach((p, idx) => {
+                    totalWeight += p.weight;
+                    totalInvested += p.total;
+                    if (p.rate1Kg < lowestRate) lowestRate = p.rate1Kg;
+                    if (p.rate1Kg > highestRate) highestRate = p.rate1Kg;
+                    if (idx === 0) latestDate = p.date;
 
-                if (!q || (p.notes||'').toLowerCase().includes(q) || (p.date||'').includes(q)) {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><strong>${p.date}</strong></td>
-                        <td>${p.weight.toFixed(3)} Kg</td>
-                        <td class="rate-cell rate-highlight">₹${p.total.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                        <td class="rate-cell">₹${p.rate1Kg.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                        <td class="rate-cell">₹${p.rateHalf.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                        <td>${p.notes || '-'}</td>
-                        <td style="text-align: right;"><button onclick="deleteEntry(${idx})" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:1rem;">🗑️</button></td>
-                    `;
-                    tbody.appendChild(tr);
-                }
-            });
+                    if (!q || (p.notes||'').toLowerCase().includes(q) || (p.date||'').includes(q)) {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><strong>${p.date}</strong></td>
+                            <td>${p.weight.toFixed(3)} Kg</td>
+                            <td class="rate-cell rate-highlight">₹${p.total.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                            <td class="rate-cell">₹${p.rate1Kg.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                            <td class="rate-cell">₹${p.rateHalf.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                            <td>${p.notes || '-'}</td>
+                            <td style="text-align: right;"><button onclick="deleteEntry(${idx})" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:1rem;" title="Delete this entry">🗑️</button></td>
+                        `;
+                        tbody.appendChild(tr);
+                    }
+                });
+            }
 
             const avgRate1Kg = totalWeight > 0 ? (totalInvested / totalWeight) : 0;
             const avgRateHalf = avgRate1Kg * 0.5;
@@ -858,14 +1188,33 @@
             document.getElementById('purchaseCountDisplay').textContent = `${purchasesData.length} Purchases`;
 
             // Insights
-            document.getElementById('lowestRateDisplay').textContent = lowestRate === Infinity ? '₹0.00' : '₹' + lowestRate.toLocaleString('en-IN', {minimumFractionDigits: 2});
-            document.getElementById('highestRateDisplay').textContent = '₹' + highestRate.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('lowestRateDisplay').textContent = (lowestRate === Infinity || lowestRate === 0) ? '₹0.00' : '₹' + lowestRate.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('highestRateDisplay').textContent = (highestRate === 0) ? '₹0.00' : '₹' + highestRate.toLocaleString('en-IN', {minimumFractionDigits: 2});
             document.getElementById('latestDateDisplay').textContent = latestDate;
 
             updateSimulation();
         }
 
-        // 5. Form Events
+        // ==========================================
+        // ⚙️ TAB & FORM EVENT LISTENERS
+        // ==========================================
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+            const targetPane = document.getElementById(tabId);
+            if (targetPane) targetPane.classList.add('active');
+
+            const buttons = document.querySelectorAll('.tab-btn');
+            if (tabId === 'dashboardTab') buttons[0].classList.add('active');
+            else if (tabId === 'recordTab') buttons[1].classList.add('active');
+            else if (tabId === 'historyTab') buttons[2].classList.add('active');
+            else if (tabId === 'calcTab') {
+                buttons[3].classList.add('active');
+                updateSimulation();
+            }
+        };
+
         function setupEvents() {
             document.querySelectorAll('.preset-chips .chip').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -912,14 +1261,14 @@
                     date: d, weight: wKg, total: total, rate1Kg: rKg, rateHalf: rHalf, notes: n
                 });
 
-                localStorage.setItem('silver_purchases_cache', JSON.stringify(purchasesData));
+                saveCurrentProfileCache();
                 renderDashboard();
 
                 document.getElementById('priceInput').value = '';
                 document.getElementById('notesInput').value = '';
                 calcPreview();
 
-                await commitCSVToGitHub(`Add purchase: ${wKg}Kg on ${d}`);
+                await commitCSVToGitHub(`Add purchase: ${wKg}Kg on ${d} [${currentProfile ? currentProfile.name : ''}]`);
                 switchTab('dashboardTab');
             });
 
@@ -1001,22 +1350,31 @@
         }
 
         window.deleteEntry = async function(index) {
-            if (confirm('Delete this purchase? It will also be deleted from GitHub.')) {
+            if (confirm(`Delete this purchase for ${currentProfile ? currentProfile.name : 'this user'}?`)) {
                 purchasesData.splice(index, 1);
-                localStorage.setItem('silver_purchases_cache', JSON.stringify(purchasesData));
+                saveCurrentProfileCache();
                 renderDashboard();
-                await commitCSVToGitHub('Delete purchase from SilverVault');
+                await commitCSVToGitHub(`Delete purchase`);
             }
         };
 
-        // Modal Settings Handling
+        // ==========================================
+        // ⚙️ SETTINGS MODAL & PROFILE MANAGEMENT
+        // ==========================================
         window.openSettingsModal = function() {
             document.getElementById('settingsModal').style.display = 'flex';
+            loadSavedSettings();
         };
+
         window.closeSettingsModal = function() {
             document.getElementById('settingsModal').style.display = 'none';
         };
+
         function loadSavedSettings() {
+            if (currentProfile) {
+                document.getElementById('settingsProfileName').textContent = currentProfile.name;
+            }
+
             const token = localStorage.getItem('gh_token');
             const user = localStorage.getItem('gh_user');
             const repo = localStorage.getItem('gh_repo');
@@ -1028,21 +1386,133 @@
             if (token) document.getElementById('ghToken').value = token;
 
             updateSyncBadge(!!(token && user && repo));
+            renderSettingsProfilesList();
         }
 
-        async function saveSettings() {
-            const newPin = document.getElementById('newMasterPin').value.trim();
-            if (newPin) {
-                if (newPin.length < 4) {
-                    toast('Passcode must be at least 4 characters');
-                    return;
-                }
-                const h = await sha256(newPin);
-                localStorage.setItem('sv_pin_hash', h);
-                document.getElementById('newMasterPin').value = '';
-                toast('🔒 Passcode updated successfully!');
+        function renderSettingsProfilesList() {
+            const profiles = getProfiles();
+            const listEl = document.getElementById('settingsProfilesList');
+            if (!listEl) return;
+            listEl.innerHTML = '';
+
+            profiles.forEach(p => {
+                const isCurrent = currentProfile && (p.id === currentProfile.id);
+                const row = document.createElement('div');
+                row.className = `settings-profile-row ${isCurrent ? 'active-profile-row' : ''}`;
+                row.innerHTML = `
+                    <div style="font-size: 0.85rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 0.4rem;">
+                        <span>👤 ${p.name}</span>
+                        ${isCurrent ? '<span style="font-size:0.65rem; background:rgba(56,189,248,0.2); color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:700;">LOGGED IN</span>' : ''}
+                    </div>
+                    <div style="display: flex; gap: 0.4rem; align-items: center;">
+                        ${profiles.length > 1 ? `<button onclick="deleteProfile('${p.id}')" style="background:none; border:none; color:#f87171; cursor:pointer; font-size:1rem; padding:0.2rem;" title="Delete Profile">🗑️</button>` : ''}
+                    </div>
+                `;
+                listEl.appendChild(row);
+            });
+        }
+
+        window.toggleSettingsAddProfile = function() {
+            const box = document.getElementById('settingsAddProfileBox');
+            const isOpen = (box.style.display === 'block');
+            box.style.display = isOpen ? 'none' : 'block';
+            if (!isOpen) {
+                document.getElementById('modalNewProfileName').value = '';
+                document.getElementById('modalNewProfilePin').value = '';
+                setTimeout(() => document.getElementById('modalNewProfileName').focus(), 100);
+            }
+        };
+
+        window.createProfileFromSettings = async function() {
+            const name = document.getElementById('modalNewProfileName').value.trim();
+            const pin = document.getElementById('modalNewProfilePin').value;
+
+            if (!name) { toast('Please enter a username'); return; }
+            if (pin.length < 4) { toast('Password must be at least 4 characters'); return; }
+
+            const profiles = getProfiles();
+            if (profiles.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+                toast('This username already exists');
+                return;
             }
 
+            let baseId = sanitizeProfileId(name);
+            let id = baseId;
+            let counter = 1;
+            while (profiles.some(p => p.id === id)) {
+                id = `${baseId}_${counter++}`;
+            }
+
+            const filename = generateProfileFilename(id, false);
+            const pinHash = await sha256(pin);
+
+            const newProfile = {
+                id: id,
+                name: name,
+                filename: filename,
+                pinHash: pinHash,
+                createdAt: new Date().toISOString()
+            };
+
+            profiles.push(newProfile);
+            saveProfiles(profiles);
+
+            document.getElementById('modalNewProfileName').value = '';
+            document.getElementById('modalNewProfilePin').value = '';
+            toggleSettingsAddProfile();
+            renderSettingsProfilesList();
+            toast(`✅ Profile "${newProfile.name}" created!`);
+        };
+
+        window.deleteProfile = function(id) {
+            const profiles = getProfiles();
+            if (profiles.length <= 1) {
+                toast('Cannot delete the only remaining profile');
+                return;
+            }
+            const target = profiles.find(p => p.id === id);
+            if (!target) return;
+
+            if (confirm(`Are you sure you want to delete profile "${target.name}"?`)) {
+                const updated = profiles.filter(p => p.id !== id);
+                saveProfiles(updated);
+                localStorage.removeItem('silver_purchases_cache_' + id);
+
+                if (currentProfile && currentProfile.id === id) {
+                    closeSettingsModal();
+                    logout();
+                    toast(`Profile "${target.name}" deleted. Please log in.`);
+                } else {
+                    renderSettingsProfilesList();
+                    toast(`Profile "${target.name}" deleted.`);
+                }
+            }
+        };
+
+        window.updateCurrentProfilePasscode = async function() {
+            if (!currentProfile) return;
+            const newPin = document.getElementById('newMasterPin').value.trim();
+            if (!newPin) {
+                toast('Please enter a new password');
+                return;
+            }
+            if (newPin.length < 4) {
+                toast('Password must be at least 4 characters');
+                return;
+            }
+            const h = await sha256(newPin);
+            const profiles = getProfiles();
+            const p = profiles.find(x => x.id === currentProfile.id);
+            if (p) {
+                p.pinHash = h;
+                saveProfiles(profiles);
+                currentProfile.pinHash = h;
+                document.getElementById('newMasterPin').value = '';
+                toast(`🔒 Password updated successfully!`);
+            }
+        };
+
+        async function saveGitHubSettings() {
             const user = document.getElementById('ghUsername').value.trim();
             const repo = document.getElementById('ghRepo').value.trim();
             const branch = document.getElementById('ghBranch').value.trim() || 'main';
@@ -1054,8 +1524,11 @@
                 localStorage.setItem('gh_branch', branch);
                 localStorage.setItem('gh_token', token);
                 updateSyncBadge(true);
-                toast('✅ GitHub Connected!');
+                toast('✅ Cloud sync connected!');
                 loadCSVData();
+            } else {
+                toast('Please fill in GitHub username, repo name, and token');
+                return;
             }
 
             closeSettingsModal();
@@ -1073,23 +1546,33 @@
             }
         }
 
+        // ==========================================
+        // 📥 EXPORT PER PROFILE (EXCEL & CSV)
+        // ==========================================
         function exportToExcel() {
+            if (!currentProfile) return;
             const wsData = [["Date", "Weight (Kg)", "Total Price (INR)", "Rate per 1 Kg (INR)", "Rate per 1/2 Kg (INR)", "Notes"]];
             purchasesData.forEach(p => wsData.push([p.date, p.weight, p.total, p.rate1Kg, p.rateHalf, p.notes]));
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.aoa_to_sheet(wsData);
-            XLSX.utils.book_append_sheet(wb, ws, "Silver Purchases");
-            XLSX.writeFile(wb, "silver_purchases.xlsx");
+            const sheetTitle = (currentProfile.name + " Purchases").substring(0, 31);
+            XLSX.utils.book_append_sheet(wb, ws, sheetTitle);
+            const fileName = currentProfile.filename.replace('.csv', '') + '.xlsx';
+            XLSX.writeFile(wb, fileName);
+            toast(`📥 Excel spreadsheet downloaded`);
         }
+
         function exportToCSV() {
+            if (!currentProfile) return;
             let csv = "Date,Weight_Kg,Total_Price,Rate_1Kg,Rate_HalfKg,Notes\n";
             purchasesData.forEach(p => csv += `${p.date},${p.weight},${p.total},${p.rate1Kg},${p.rateHalf},"${p.notes || ''}"\n`);
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'silver_purchases.csv';
+            a.download = currentProfile.filename;
             a.click();
+            toast(`📥 CSV file downloaded`);
         }
 
         function encodeBase64Utf8(str) {
