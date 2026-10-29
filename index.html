@@ -1020,7 +1020,8 @@
             if (!token) return '';
             const t = token.trim();
             if (t.startsWith('token ') || t.startsWith('Bearer ')) return t;
-            return 'token ' + t;
+            // Standard GitHub REST API authorization format
+            return 'Bearer ' + t;
         }
 
         // Load CSV data for the current active profile (tries multiple candidate filenames)
@@ -1203,7 +1204,15 @@
                 } else {
                     const err = await putRes.json();
                     console.error('GitHub Commit Error:', err);
-                    alert(`GitHub Sync Notice:\n\nCould not commit to GitHub: ${err.message || 'Check permissions'}\n\nBranch: ${branch}\nFile: ${filename}\n\nNote: Your data IS saved in your browser. To fix GitHub sync, check your GitHub Token, Repo name, and Branch in Settings (⚙️).`);
+                    let helpMsg = '';
+                    if (putRes.status === 403 || putRes.status === 401) {
+                        helpMsg = '\n\n👉 Fix: Your GitHub token lacks write permissions.\n• If using a Fine-Grained Token: Under "Repository permissions" set "Contents" to "Read and write".\n• If using a Classic Token: Make sure the "repo" box is checked.';
+                    } else if (putRes.status === 404) {
+                        helpMsg = `\n\n👉 Fix: Branch "${branch}" was not found on this repo. Check if your repo uses "master" instead of "main" in Settings.`;
+                    } else if (putRes.status === 409 || putRes.status === 422) {
+                        helpMsg = `\n\n👉 Fix: File conflict. Click "🔍 Test & Sync Now" in Settings to pull the latest file state first.`;
+                    }
+                    alert(`GitHub Sync Error (${putRes.status}):\n${err.message || 'Check permissions'}\n\nFile: ${filename}\nBranch: ${branch}${helpMsg}`);
                 }
             } catch(e) {
                 console.error(e);
