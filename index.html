@@ -703,12 +703,27 @@
 
         function getProfiles() {
             const raw = localStorage.getItem('sv_profiles');
+            let list = [];
             if (raw) {
                 try {
-                    const list = JSON.parse(raw);
-                    if (Array.isArray(list) && list.length > 0) return list;
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed)) list = parsed;
                 } catch(e) {}
             }
+
+            // Auto-heal profiles that were mistakenly assigned silver_purchases.csv
+            let changed = false;
+            list.forEach(p => {
+                if (p.name && p.name.toLowerCase() !== 'primary vault' && p.name.toLowerCase() !== 'default') {
+                    if (p.filename === 'silver_purchases.csv') {
+                        p.filename = `silver_purchases_${p.id}.csv`;
+                        changed = true;
+                    }
+                }
+            });
+            if (changed) saveProfiles(list);
+            if (list.length > 0) return list;
+
             // Backward compatibility: migrate legacy single-PIN if present
             const legacyPin = localStorage.getItem('sv_pin_hash');
             if (legacyPin) {
@@ -729,15 +744,43 @@
             localStorage.setItem('sv_profiles', JSON.stringify(profiles));
         }
 
-        function sanitizeProfileId(name) {
-            return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || ('profile_' + Date.now());
+        function updateProfileInStorage(profile) {
+            const profiles = getProfiles();
+            const idx = profiles.findIndex(p => p.id === profile.id);
+            if (idx !== -1) {
+                profiles[idx].filename = profile.filename;
+                saveProfiles(profiles);
+            }
         }
 
-        function generateProfileFilename(id, isFirst = false) {
-            if (isFirst || id === 'default' || id === 'primary' || id === 'primary_vault') {
+        function sanitizeProfileId(name) {
+            return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || ('user_' + Date.now());
+        }
+
+        function generateProfileFilename(id) {
+            if (id === 'default' || id === 'primary' || id === 'primary_vault') {
                 return 'silver_purchases.csv';
             }
             return `silver_purchases_${id}.csv`;
+        }
+
+        // Return list of candidate filenames to tolerate various naming styles and letter cases
+        function getCandidateFilenames(profile) {
+            const list = [];
+            const id = profile.id;
+            const name = profile.name;
+
+            if (profile.filename) list.push(profile.filename);
+            list.push(`silver_purchases_${id}.csv`);
+            list.push(`silver_purchases_${name}.csv`);
+            list.push(`${name}.csv`);
+            list.push(`${id}.csv`);
+            list.push(`${name.toLowerCase()}.csv`);
+
+            if (id === 'default' || id === 'primary' || id === 'primary_vault') {
+                list.unshift('silver_purchases.csv');
+            }
+            return [...new Set(list)];
         }
 
         function checkSecurityLock() {
@@ -819,9 +862,8 @@
                     return;
                 }
 
-                const isFirst = (profiles.length === 0);
                 let baseId = sanitizeProfileId(name);
-                if (isFirst && (baseId === 'primary_vault' || baseId === 'primary' || baseId === 'default')) {
+                if (baseId === 'primary_vault' || baseId === 'primary' || baseId === 'default') {
                     baseId = 'default';
                 }
                 let id = baseId;
@@ -830,7 +872,7 @@
                     id = `${baseId}_${counter++}`;
                 }
 
-                const filename = generateProfileFilename(id, isFirst);
+                const filename = generateProfileFilename(id);
                 const pinHash = await sha256(pass);
 
                 const newProfile = {
@@ -975,59 +1017,65 @@
             return 'token ' + t;
         }
 
-        // Load CSV data for the current active profile
+        // Load CSV data for the current active profile (tries multiple candidate filenames)
         async function loadCSVData() {
             if (!currentProfile) return;
             const token = localStorage.getItem('gh_token');
             const owner = localStorage.getItem('gh_user');
             const repo = localStorage.getItem('gh_repo');
             const branch = localStorage.getItem('gh_branch') || 'main';
-            const filename = currentProfile.filename || `silver_purchases_${currentProfile.id}.csv`;
 
             purchasesData = []; // clear before load
+            const candidates = getCandidateFilenames(currentProfile);
 
+            // 1. Try loading from GitHub if credentials are set
             if (token && owner && repo) {
-                try {
-                    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filename}?ref=${branch}&_t=` + Date.now();
-                    const res = await fetch(apiUrl, {
-                        headers: {
-                            'Authorization': getAuthHeader(token),
-                            'Accept': 'application/vnd.github.v3+json'
+                for (const file of candidates) {
+                    try {
+                        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${file}?ref=${branch}&_t=` + Date.now();
+                        const res = await fetch(apiUrl, {
+                            headers: {
+                                'Authorization': getAuthHeader(token),
+                                'Accept': 'application/vnd.github.v3+json'
+                            }
+                        });
+                        if (res.ok) {
+                            const json = await res.json();
+                            currentFileSha = json.sha;
+                            currentProfile.filename = file;
+                            updateProfileInStorage(currentProfile);
+                            const content = decodeBase64Utf8(json.content);
+                            parseCSV(content);
+                            saveCurrentProfileCache();
+                            renderDashboard();
+                            return;
                         }
-                    });
-                    if (res.ok) {
-                        const json = await res.json();
-                        currentFileSha = json.sha;
-                        const content = decodeBase64Utf8(json.content);
-                        parseCSV(content);
-                        saveCurrentProfileCache();
-                        renderDashboard();
-                        return;
-                    } else if (res.status === 404) {
-                        // File not on GitHub yet: will create on first commit
-                        currentFileSha = null;
-                        loadFromProfileCache();
-                        renderDashboard();
-                        return;
+                    } catch(e) {
+                        console.log(`GitHub fetch failed for ${file}`, e);
                     }
-                } catch(e) {
-                    console.log('GitHub API fetch failed, trying local backup / cache', e);
                 }
             }
 
-            // Fallback: Read local file (for local server or gh-pages deploy)
-            try {
-                const res = await fetch(filename + '?_t=' + Date.now());
-                if (res.ok) {
-                    const text = await res.text();
-                    parseCSV(text);
-                    saveCurrentProfileCache();
-                } else {
-                    loadFromProfileCache();
-                }
-            } catch(e) {
-                loadFromProfileCache();
+            // 2. Try loading from local file (root directory of web server / GitHub Pages)
+            for (const file of candidates) {
+                try {
+                    const res = await fetch(file + '?_t=' + Date.now());
+                    if (res.ok) {
+                        const text = await res.text();
+                        if (text && text.includes(',')) {
+                            currentProfile.filename = file;
+                            updateProfileInStorage(currentProfile);
+                            parseCSV(text);
+                            saveCurrentProfileCache();
+                            renderDashboard();
+                            return;
+                        }
+                    }
+                } catch(e) {}
             }
+
+            // 3. Fallback to browser cache
+            loadFromProfileCache();
             renderDashboard();
         }
 
@@ -1057,31 +1105,53 @@
             const token = localStorage.getItem('gh_token');
             const owner = localStorage.getItem('gh_user');
             const repo = localStorage.getItem('gh_repo');
-            const branch = localStorage.getItem('gh_branch') || 'main';
+            let branch = localStorage.getItem('gh_branch') || 'main';
             const filename = currentProfile.filename || `silver_purchases_${currentProfile.id}.csv`;
 
             if (!token || !owner || !repo) {
-                toast(`Saved locally! Connect GitHub in Settings to auto-commit to ${filename}.`);
+                toast(`⚠️ Saved in browser only. Connect GitHub in Settings ⚙️ to save to GitHub CSV!`);
                 return;
             }
 
             const btn = document.getElementById('saveBtn');
             if (btn) {
                 btn.disabled = true;
-                btn.textContent = 'Committing to GitHub...';
+                btn.textContent = 'Syncing to GitHub...';
             }
 
             try {
                 // Fetch latest SHA for this profile's file if it exists
-                const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filename}?ref=${branch}&_t=` + Date.now();
-                const getRes = await fetch(getUrl, {
+                let getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filename}?ref=${branch}&_t=` + Date.now();
+                let getRes = await fetch(getUrl, {
                     headers: { 'Authorization': getAuthHeader(token), 'Accept': 'application/vnd.github.v3+json' }
                 });
+
+                // Auto-detect branch: if 'main' returns 404, check if repo is on 'master'
+                if (getRes.status === 404 && branch === 'main') {
+                    try {
+                        const checkMaster = await fetch(`https://api.github.com/repos/${owner}/${repo}/branches/master`, {
+                            headers: { 'Authorization': getAuthHeader(token) }
+                        });
+                        if (checkMaster.ok) {
+                            branch = 'master';
+                            localStorage.setItem('gh_branch', 'master');
+                            getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filename}?ref=master&_t=` + Date.now();
+                            getRes = await fetch(getUrl, {
+                                headers: { 'Authorization': getAuthHeader(token), 'Accept': 'application/vnd.github.v3+json' }
+                            });
+                        }
+                    } catch(e) {}
+                }
+
                 if (getRes.ok) {
                     const getJson = await getRes.json();
                     currentFileSha = getJson.sha;
                 } else if (getRes.status === 404) {
-                    currentFileSha = null; // PUT without sha will create the new file on GitHub
+                    currentFileSha = null; // PUT without sha creates new file on GitHub
+                } else if (getRes.status === 401 || getRes.status === 403) {
+                    const err = await getRes.json();
+                    alert(`GitHub Sync Error (${getRes.status}):\n${err.message || 'Permission denied'}\n\nPlease check your GitHub Personal Access Token in Settings (⚙️). Make sure it has "repo" permissions.`);
+                    return;
                 }
 
                 let csv = "Date,Weight_Kg,Total_Price,Rate_1Kg,Rate_HalfKg,Notes\n";
@@ -1091,7 +1161,7 @@
 
                 const putUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filename}`;
                 const bodyPayload = {
-                    message: actionDesc || `Update ${filename} via SilverVault [Profile: ${currentProfile.name}]`,
+                    message: actionDesc || `Update purchases via SilverVault [User: ${currentProfile.name}]`,
                     content: encodeBase64Utf8(csv),
                     branch: branch
                 };
@@ -1112,13 +1182,15 @@
                 if (putRes.ok) {
                     const putJson = await putRes.json();
                     currentFileSha = putJson.content.sha;
-                    toast(`✅ Changes saved & synced to cloud!`);
+                    toast(`✅ Successfully committed to GitHub!`);
                 } else {
                     const err = await putRes.json();
-                    toast('⚠️ Cloud sync failed: ' + (err.message || 'Check permissions'));
+                    console.error('GitHub Commit Error:', err);
+                    alert(`GitHub Sync Notice:\n\nCould not commit to GitHub: ${err.message || 'Check permissions'}\n\nBranch: ${branch}\nFile: ${filename}\n\nNote: Your data IS saved in your browser. To fix GitHub sync, check your GitHub Token, Repo name, and Branch in Settings (⚙️).`);
                 }
             } catch(e) {
-                toast('Network error during sync');
+                console.error(e);
+                toast('Network error during sync (saved in browser)');
             } finally {
                 if (btn) {
                     btn.disabled = false;
