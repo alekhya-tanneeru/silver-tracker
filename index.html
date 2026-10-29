@@ -941,9 +941,35 @@
         }
         window.hideCreateProfileView = hideCreateProfileView;
 
+        function resetDashboardUI() {
+            purchasesData = [];
+            const tbody = document.getElementById('tableBody');
+            if (tbody) tbody.innerHTML = '';
+            const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            setTxt('avgRateKgDisplay', '₹0.00');
+            setTxt('avgRateHalfKgDisplay', '₹0.00');
+            const wEl = document.getElementById('totalWeightKgDisplay');
+            if (wEl) wEl.innerHTML = '0.000 <small style="font-size: 1rem; color: var(--silver-400);">Kg</small>';
+            setTxt('totalWeightGramsDisplay', '0 Grams');
+            setTxt('totalInvestedDisplay', '₹0.00');
+            setTxt('purchaseCountDisplay', '0 Purchases Recorded');
+            setTxt('lowestRateDisplay', '₹0.00');
+            setTxt('highestRateDisplay', '₹0.00');
+            setTxt('latestDateDisplay', '-');
+            setTxt('navProfileName', 'Profile');
+            setTxt('overviewProfileName', '');
+            setTxt('recordProfileName', '');
+            setTxt('historyProfileName', '');
+            updateSimulation();
+        }
+
         function unlockVault() {
             if (!currentProfile) return;
             isVaultUnlocked = true;
+
+            // Immediately wipe any previous profile DOM state
+            resetDashboardUI();
+
             document.getElementById('pinLockScreen').style.display = 'none';
             document.getElementById('dashboardContent').style.filter = 'none';
             document.getElementById('loginUsername').value = '';
@@ -955,6 +981,11 @@
             document.getElementById('recordProfileName').textContent = currentProfile.name;
             document.getElementById('historyProfileName').textContent = currentProfile.name;
 
+            // Instantly render this profile's cached data (0ms delay, no flash of other data)
+            loadFromProfileCache();
+            renderDashboard();
+
+            // Then asynchronously check for fresh remote/file changes in background
             loadSavedSettings();
             loadCSVData();
         }
@@ -962,11 +993,10 @@
         function logout() {
             isVaultUnlocked = false;
             currentProfile = null;
-            purchasesData = []; // Purge all records from memory
+            resetDashboardUI(); // Completely wipe all rendered UI data immediately!
             document.getElementById('dashboardContent').style.filter = 'blur(15px)';
             document.getElementById('pinLockScreen').style.display = 'flex';
             hideCreateProfileView();
-            document.getElementById('navProfileName').textContent = 'Profile';
             document.getElementById('loginUsername').value = '';
             document.getElementById('loginPassword').value = '';
             setTimeout(() => document.getElementById('loginUsername').focus(), 150);
